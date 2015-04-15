@@ -1,6 +1,6 @@
-{{AppVeyor build status badge for master branch}}
+[![Build status](https://ci.appveyor.com/api/projects/status/p2vv1iwqcks4sk8m/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xdscdiagnostics/branch/master)
 
-#{{ModuleName}}
+# xDscDiagnostics
 
 {{Description}}
 
