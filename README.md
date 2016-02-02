@@ -81,6 +81,8 @@ The cmdlet will confirm by default.
 ## Versions
 
 ### Unreleased
+
+### 2.1.0.0
 * Add the Get-xDscDiagnosticsZip CmdLet 
 * 
 ### 2.0.0.0
