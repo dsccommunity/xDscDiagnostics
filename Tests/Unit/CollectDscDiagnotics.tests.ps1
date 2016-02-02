@@ -27,6 +27,7 @@ else
 }
 Import-Module (Join-Path -Path $moduleRoot -ChildPath 'DSCResource.Tests\TestHelper.psm1') -Force
 Import-Module (Join-Path -Path $moduleRoot -ChildPath "$Global:ModuleName.psm1") -Force
+set-wsmanquickconfig -force -SkipNetworkProfileCheck
 #endregion
 
 # TODO: Other Optional Init Code Goes Here...
