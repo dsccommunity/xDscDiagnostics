@@ -19,157 +19,169 @@ function Get-FolderAsZip
         [string] $filename
     )
 
+    $local = $false
     if(!$Session)
     {
         $Session = New-PSSession
+        $local = $true
     }
 
-    $attempts =0 
-    $gotZip = $false
-    while($attempts -lt 5 -and !$gotZip)
+    try
     {
-        $attempts++
-        $resultTable = invoke-command -ErrorAction:Continue -Session $Session -script {
-                param($logFolder, $destinationPath, $fileName, $ReturnValue)
-                $ErrorActionPreference = 'stop'
-                Set-StrictMode -Version latest
+        $attempts =0 
+        $gotZip = $false
+        while($attempts -lt 5 -and !$gotZip)
+        {
+            $attempts++
+            $resultTable = invoke-command -ErrorAction:Continue -Session $Session -script {
+                    param($logFolder, $destinationPath, $fileName, $ReturnValue)
+                    $ErrorActionPreference = 'stop'
+                    Set-StrictMode -Version latest
 
 
-                $tempPath = Join-path $env:temp ([system.io.path]::GetRandomFileName())
-                if(!(Test-Path $tempPath))
-                {
-                    mkdir $tempPath > $null
-                }
-                $sourcePath = Join-path $logFolder '*'
-                Copy-Item -Recurse $sourcePath $tempPath -ErrorAction SilentlyContinue
-
-                $content = $null
-                $caughtError = $null
-                try 
-                {
-                    
-
-                    # Copy files using the Shell.  
-                    # 
-                    # Note, because this uses shell this will not work on core OSs
-                    # But we only use this on older OSs and in test, so core OS use
-                    # is unlikely
-                    function Copy-ToZipFileUsingShell
+                    $tempPath = Join-path $env:temp ([system.io.path]::GetRandomFileName())
+                    if(!(Test-Path $tempPath))
                     {
-                        param (
-                            [string]
-                            [ValidateNotNullOrEmpty()]
-                            [ValidateScript({ if($_ -notlike '*.zip'){ throw 'zipFileName must be *.zip'} else {return $true}})]
-                            $zipfilename,
+                        mkdir $tempPath > $null
+                    }
+                    $sourcePath = Join-path $logFolder '*'
+                    Copy-Item -Recurse $sourcePath $tempPath -ErrorAction SilentlyContinue
 
-                            [string]
-                            [ValidateScript({ if(-not (Test-Path $_)){ throw 'itemToAdd must exist'} else {return $true}})]
-                            $itemToAdd,
+                    $content = $null
+                    $caughtError = $null
+                    try 
+                    {
+                        
 
-                            [switch]
-                            $overWrite
-                        )
-                        Set-StrictMode -Version latest
-                        if(-not (Test-Path $zipfilename) -or $overWrite)
+                        # Copy files using the Shell.  
+                        # 
+                        # Note, because this uses shell this will not work on core OSs
+                        # But we only use this on older OSs and in test, so core OS use
+                        # is unlikely
+                        function Copy-ToZipFileUsingShell
                         {
-                            set-content $zipfilename ('PK' + [char]5 + [char]6 + ("$([char]0)" * 18))
-                        }
-                        $app = New-Object -com shell.application
-                        $zipFile = ( Get-Item $zipfilename ).fullname
-                        $zipFolder = $app.namespace( $zipFile )
-                        $itemToAdd = (Resolve-Path $itemToAdd).ProviderPath
-                        $zipFolder.copyhere( $itemToAdd )
-                    }
-                    if(!$fileName)
-                    {
-                        $fileName = "$([System.IO.Path]::GetFileName($logFolder))-$((Get-Date).ToString('yyyyMMddhhmmss')).zip"
-                    }
-                    if($destinationPath)
-                    {
-                      $zipFile = Join-Path $destinationPath $fileName
+                            param (
+                                [string]
+                                [ValidateNotNullOrEmpty()]
+                                [ValidateScript({ if($_ -notlike '*.zip'){ throw 'zipFileName must be *.zip'} else {return $true}})]
+                                $zipfilename,
 
-                      if(!(Test-Path $destinationPath))
-                      {
-                        mkdir $destinationPath > $null
-                      }
-                    }
-                    else
-                    {
-                      $zipFile = Join-Path ([IO.Path]::GetTempPath()) ('{0}.zip' -f $fileName)
-                    }
-                    if ($PSVersionTable.CLRVersion.Major -lt 4)
-                    {
-                        Copy-ToZipFileUsingShell -zipfilename $zipFile -itemToAdd $tempPath 
-                        $content = Get-Content $zipFile | Out-String
-                    }
-                    else
-                    {
-                        Add-Type -AssemblyName System.IO.Compression.FileSystem > $null
-                        [IO.Compression.ZipFile]::CreateFromDirectory($tempPath, $zipFile) > $null
-                        $content = Get-Content -Raw $zipFile
-                    }
-                }
-                catch [Exception]
-                {
-                    $caughtError = $_
-                }
-                if($ReturnValue -eq 'Path')
-                {
-                    # Don't return content if we don't need it
-                    return @{
-                            Content = $null
-                            Error = $caughtError
-                            zipFilePath = $zipFile
+                                [string]
+                                [ValidateScript({ if(-not (Test-Path $_)){ throw 'itemToAdd must exist'} else {return $true}})]
+                                $itemToAdd,
+
+                                [switch]
+                                $overWrite
+                            )
+                            Set-StrictMode -Version latest
+                            if(-not (Test-Path $zipfilename) -or $overWrite)
+                            {
+                                set-content $zipfilename ('PK' + [char]5 + [char]6 + ("$([char]0)" * 18))
+                            }
+                            $app = New-Object -com shell.application
+                            $zipFile = ( Get-Item $zipfilename ).fullname
+                            $zipFolder = $app.namespace( $zipFile )
+                            $itemToAdd = (Resolve-Path $itemToAdd).ProviderPath
+                            $zipFolder.copyhere( $itemToAdd )
                         }
+                        if(!$fileName)
+                        {
+                            $fileName = "$([System.IO.Path]::GetFileName($logFolder))-$((Get-Date).ToString('yyyyMMddhhmmss')).zip"
+                        }
+                        if($destinationPath)
+                        {
+                        $zipFile = Join-Path $destinationPath $fileName
+
+                        if(!(Test-Path $destinationPath))
+                        {
+                            mkdir $destinationPath > $null
+                        }
+                        }
+                        else
+                        {
+                        $zipFile = Join-Path ([IO.Path]::GetTempPath()) ('{0}.zip' -f $fileName)
+                        }
+                        if ($PSVersionTable.CLRVersion.Major -lt 4)
+                        {
+                            Copy-ToZipFileUsingShell -zipfilename $zipFile -itemToAdd $tempPath 
+                            $content = Get-Content $zipFile | Out-String
+                        }
+                        else
+                        {
+                            Add-Type -AssemblyName System.IO.Compression.FileSystem > $null
+                            [IO.Compression.ZipFile]::CreateFromDirectory($tempPath, $zipFile) > $null
+                            $content = Get-Content -Raw $zipFile
+                        }
+                    }
+                    catch [Exception]
+                    {
+                        $caughtError = $_
+                    }
+                    if($ReturnValue -eq 'Path')
+                    {
+                        # Don't return content if we don't need it
+                        return @{
+                                Content = $null
+                                Error = $caughtError
+                                zipFilePath = $zipFile
+                            }
+                    }
+                    else
+                    {
+                        return @{
+                                Content = $content
+                                Error = $caughtError
+                                zipFilePath = $zipFile
+                            }                
+                    }             
+                } -argumentlist @($sourceFolder,$destinationPath, $fileName, $ReturnValue) -ErrorVariable zipInvokeError 
+                
+
+                if($zipInvokeError -or $resultTable.Error)
+                {
+                    if($attempts -lt 5)
+                    {
+                        Write-Debug "An error occured trying to zip $sourceFolder .  Will retry..."
+                        Start-Sleep -Seconds $attempts
+                    }
+                    else {
+                        if($resultTable.Error)
+                        {
+                            $lastError = $resultTable.Error
+                        }
+                        else 
+                        {
+                            $lastError = $zipInvokeError[0]    
+                        }
+                        
+                        Write-Warning "An error occured trying to zip $sourceFolder .  Aborting."
+                        Write-ErrorInfo -ErrorObject $lastError -WriteWarning
+
+                    }
                 }
                 else
                 {
-                    return @{
-                            Content = $content
-                            Error = $caughtError
-                            zipFilePath = $zipFile
-                        }                
-                }             
-            } -argumentlist @($sourceFolder,$destinationPath, $fileName, $ReturnValue) -ErrorVariable zipInvokeError 
-            
-
-            if($zipInvokeError -or $resultTable.Error)
-            {
-                if($attempts -lt 5)
-                {
-                    Write-Debug "An error occured trying to zip $sourceFolder .  Will retry..."
-                    Start-Sleep -Seconds $attempts
+                    $gotZip = $true
                 }
-                else {
-                    if($resultTable.Error)
-                    {
-                        $lastError = $resultTable.Error
-                    }
-                    else 
-                    {
-                        $lastError = $zipInvokeError[0]    
-                    }
-                    
-                    Write-Warning "An error occured trying to zip $sourceFolder .  Aborting."
-                    Write-ErrorInfo -ErrorObject $lastError -WriteWarning
+        }
+        if($ReturnValue -eq 'Path')
+        {
+            $result = $resultTable.zipFilePath
+        }
+        else 
+        {
+            $result = $resultTable.content
+        }
 
-                }
-            }
-            else
-            {
-                $gotZip = $true
-            }
+        return $result
     }
-    if($ReturnValue -eq 'Path')
+    finally
     {
-        $result = $resultTable.zipFilePath
+        if($local)
+        {
+            Remove-PSSession -Session $Session
+        }        
     }
-    else 
-    {
-        $result = $resultTable.content
-    }
-
-    return $result
 }
 
 #
@@ -212,21 +224,30 @@ function Export-EventLog
         $Session = New-PSSession
         $local = $true
     }
+    try
+    {
+        invoke-command -ErrorAction:Continue -Session $Session -script {  
+            param($name, $path)
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest        
+            Write-Debug "Name: $name"
 
-    invoke-command -ErrorAction:Continue -Session $Session -script {  
-        param($name, $path)
-        $ErrorActionPreference = 'stop'
-        Set-StrictMode -Version latest        
-        Write-Debug "Name: $name"
+            Write-Debug "Path: $path"
+            Write-Debug "windir: $Env:windir"
+            $exePath = Join-Path $Env:windir 'system32\wevtutil.exe'
+            $exportFileName = "$($Name -replace '/','-').evtx"
 
-        Write-Debug "Path: $path"
-        Write-Debug "windir: $Env:windir"
-        $exePath = Join-Path $Env:windir 'system32\wevtutil.exe'
-        $exportFileName = "$($Name -replace '/','-').evtx"
-
-        $ExportCommand = "$exePath epl '$Name' '$Path\$exportFileName' /ow:True 2>&1"
-        Invoke-expression -command $ExportCommand
-    } -argumentlist @($Name, $path)
+            $ExportCommand = "$exePath epl '$Name' '$Path\$exportFileName' /ow:True 2>&1"
+            Invoke-expression -command $ExportCommand
+        } -argumentlist @($Name, $path)        
+    }
+    finally
+    {
+        if($local)
+        {
+            Remove-PSSession -Session $Session
+        }        
+    }
 }
 
 #
@@ -251,17 +272,19 @@ function Get-xDscDiagnosticsZip
         $Session = New-PSSession
         $local = $true
     }
-    Function Write-ProgressMessage
+    try
     {
-        [CmdletBinding()]
-        param([string]$Status, [int]$PercentComplete, [switch]$Completed)
+        Function Write-ProgressMessage
+        {
+            [CmdletBinding()]
+            param([string]$Status, [int]$PercentComplete, [switch]$Completed)
 
-        Write-Progress -Activity 'Get-AzureVmDscDiagnostics' @PSBoundParameters
-        Write-Verbose -message $status 
-    }
+            Write-Progress -Activity 'Get-AzureVmDscDiagnostics' @PSBoundParameters
+            Write-Verbose -message $status 
+        }
 
 
-$privacyConfirmation = @"
+    $privacyConfirmation = @"
 Collecting the following information, which may contain private/sensative details including:  
     1.   Logs from the Azure VM Agent, including all extensions
     2.   The state of the Azure DSC Extension, 
@@ -276,117 +299,125 @@ This tool is provided for your convience, to ensure all data is collected as qui
 
 Are you sure you want to continue
 "@
-    if ($pscmdlet.ShouldProcess($privacyConfirmation)) 
-    {
-        
-        $tempPath = invoke-command -ErrorAction:Continue -Session $Session -script {
+        if ($pscmdlet.ShouldProcess($privacyConfirmation)) 
+        {
+            
+            $tempPath = invoke-command -ErrorAction:Continue -Session $Session -script {
+                    $ErrorActionPreference = 'stop'
+                    Set-StrictMode -Version latest
+                    $tempPath = Join-path $env:temp ([system.io.path]::GetRandomFileName())
+                    if(!(Test-Path $tempPath))
+                    {
+                        mkdir $tempPath > $null
+                        mkdir $tempPath\CBS > $null
+                        mkdir $tempPath\DISM > $null
+                    }
+                    return $tempPath
+                }
+            Write-Debug -message "tempPath: $tempPath" -verbose
+
+            Write-ProgressMessage  -Status 'Finding DSC and copying Extension ...' -PercentComplete 0
+            invoke-command -ErrorAction:Continue -Session $Session -script {
+                param($tempPath)
                 $ErrorActionPreference = 'stop'
                 Set-StrictMode -Version latest
-                $tempPath = Join-path $env:temp ([system.io.path]::GetRandomFileName())
-                if(!(Test-Path $tempPath))
+                $dirs = @(Get-ChildItem C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue) 
+                $dir = $null
+                if($dirs.Count -ge 1)
                 {
-                    mkdir $tempPath > $null
-                    mkdir $tempPath\CBS > $null
-                    mkdir $tempPath\DISM > $null
+                    $dir = @(Get-ChildItem C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue)[0].FullName
                 }
-                return $tempPath
-            }
-        Write-Debug -message "tempPath: $tempPath" -verbose
-
-        Write-ProgressMessage  -Status 'Finding DSC and copying Extension ...' -PercentComplete 0
-        invoke-command -ErrorAction:Continue -Session $Session -script {
-            param($tempPath)
-            $ErrorActionPreference = 'stop'
-            Set-StrictMode -Version latest
-            $dirs = @(Get-ChildItem C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue) 
-            $dir = $null
-            if($dirs.Count -ge 1)
-            {
-                $dir = @(Get-ChildItem C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue)[0].FullName
-            }
-            
+                
 
 
 
-            if($dir)
-            {
-              Write-Verbose -message "Found DSC extension at: $dir" -verbose
-              Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
-              Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
-                    if($_.Extension -ieq '.msu')
-                    {
-                      $newFileName = "$($_.FullName).wasHere"
-                      Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
-                      $_.Delete()
+                if($dir)
+                {
+                Write-Verbose -message "Found DSC extension at: $dir" -verbose
+                Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
+                Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
+                        if($_.Extension -ieq '.msu')
+                        {
+                        $newFileName = "$($_.FullName).wasHere"
+                        Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
+                        $_.Delete()
+                        }
                     }
                 }
-            }
-            else 
-            { 
-                Write-Verbose -message "Did not find DSC extension." -verbose
-            }
-        } -argumentlist @($tempPath)
+                else 
+                { 
+                    Write-Verbose -message "Did not find DSC extension." -verbose
+                }
+            } -argumentlist @($tempPath)
 
-        Write-ProgressMessage  -Status 'Copying log files..' -PercentComplete 1
-        invoke-command -ErrorAction:Continue -Session $Session -script {
-            param($tempPath)    
-            $ErrorActionPreference = 'stop'
-            Set-StrictMode -Version latest
-            Copy-Item -Recurse C:\WindowsAzure\Logs $tempPath\WindowsAzureLogs -ErrorAction SilentlyContinue
-            Copy-Item $env:windir\WindowsUpdate.log $tempPath\WindowsUpdate.log -ErrorAction SilentlyContinue
-            Copy-Item $env:windir\logs\CBS\*.* $tempPath\CBS -ErrorAction SilentlyContinue
-            Copy-Item $env:windir\logs\DISM\*.* $tempPath\DISM -ErrorAction SilentlyContinue
-            Get-HotFix | Out-String | Out-File  $tempPath\HotFixIds.txt
-            Get-DscLocalConfigurationManager | Out-String | Out-File   $tempPath\Get-dsclcm.txt
-        } -argumentlist @($tempPath)
-
-        Write-ProgressMessage -Status 'Getting DSC Event log ...' -PercentComplete 25
-        Export-EventLog -Name Microsoft-Windows-DSC/Operational -Path $tempPath -session $session
-        Write-ProgressMessage  -Status 'Getting Application Event log ...' -PercentComplete 50
-        Export-EventLog -Name Application -Path $tempPath -session $session
-
-        
-        
-        
-        if(!$destinationPath)
-        {
-            Write-ProgressMessage  -Status 'Getting destinationPath ...' -PercentComplete 74
-            $destinationPath = invoke-command -ErrorAction:Continue -Session $Session -script { 
+            Write-ProgressMessage  -Status 'Copying log files..' -PercentComplete 1
+            invoke-command -ErrorAction:Continue -Session $Session -script {
+                param($tempPath)    
                 $ErrorActionPreference = 'stop'
                 Set-StrictMode -Version latest
-                Join-path $env:temp ([system.io.path]::GetRandomFileName()) 
+                Copy-Item -Recurse C:\WindowsAzure\Logs $tempPath\WindowsAzureLogs -ErrorAction SilentlyContinue
+                Copy-Item $env:windir\WindowsUpdate.log $tempPath\WindowsUpdate.log -ErrorAction SilentlyContinue
+                Copy-Item $env:windir\logs\CBS\*.* $tempPath\CBS -ErrorAction SilentlyContinue
+                Copy-Item $env:windir\logs\DISM\*.* $tempPath\DISM -ErrorAction SilentlyContinue
+                Get-HotFix | Out-String | Out-File  $tempPath\HotFixIds.txt
+                Get-DscLocalConfigurationManager | Out-String | Out-File   $tempPath\Get-dsclcm.txt
+            } -argumentlist @($tempPath)
+
+            Write-ProgressMessage -Status 'Getting DSC Event log ...' -PercentComplete 25
+            Export-EventLog -Name Microsoft-Windows-DSC/Operational -Path $tempPath -session $session
+            Write-ProgressMessage  -Status 'Getting Application Event log ...' -PercentComplete 50
+            Export-EventLog -Name Application -Path $tempPath -session $session
+
+            
+            
+            
+            if(!$destinationPath)
+            {
+                Write-ProgressMessage  -Status 'Getting destinationPath ...' -PercentComplete 74
+                $destinationPath = invoke-command -ErrorAction:Continue -Session $Session -script { 
+                    $ErrorActionPreference = 'stop'
+                    Set-StrictMode -Version latest
+                    Join-path $env:temp ([system.io.path]::GetRandomFileName()) 
+                }
             }
+
+            Write-Debug -message "destinationPath: $destinationPath" -verbose
+            $zipParams = @{ 
+                    sourceFolder = $tempPath
+                    destinationPath = $destinationPath
+                    Session = $session
+                    fileName = $fileName
+                }
+
+            Write-ProgressMessage  -Status 'Zipping files ...' -PercentComplete 75
+            if($local)
+            {
+                $zip = Get-FolderAsZip @zipParams
+                $zipPath = $zip
+            }
+            else 
+            {
+                $zip = Get-FolderAsZip @zipParams -ReturnValue 'Content'   
+                if(!(Test-Path $destinationPath))
+                {
+                    mkdir $destinationPath > $null
+                }
+                $zipPath = (Join-path $destinationPath "$($session.ComputerName)-dsc-diags-$((Get-Date).ToString('yyyyMMddhhmmss')).zip")
+                set-content -path $zipPath -value $zip
+            }
+
+            Start-Process $destinationPath
+            Write-Verbose -message "Please send this zip file the engineer you have been working with.  The engineer should have emailed you instructions on how to do this: $zipPath" -verbose
+            Write-ProgressMessage  -Completed
+            return $zipPath
         }
-
-        Write-Debug -message "destinationPath: $destinationPath" -verbose
-        $zipParams = @{ 
-                sourceFolder = $tempPath
-                destinationPath = $destinationPath
-                Session = $session
-                fileName = $fileName
-            }
-
-        Write-ProgressMessage  -Status 'Zipping files ...' -PercentComplete 75
+    }
+    finally
+    {
         if($local)
         {
-            $zip = Get-FolderAsZip @zipParams
-            $zipPath = $zip
-        }
-        else 
-        {
-            $zip = Get-FolderAsZip @zipParams -ReturnValue 'Content'   
-            if(!(Test-Path $destinationPath))
-            {
-                mkdir $destinationPath > $null
-            }
-            $zipPath = (Join-path $destinationPath "$($session.ComputerName)-dsc-diags-$((Get-Date).ToString('yyyyMMddhhmmss')).zip")
-            set-content -path $zipPath -value $zip
-        }
-
-        Start-Process $destinationPath
-        Write-Verbose -message "Please send this zip file the engineer you have been working with.  The engineer should have emailed you instructions on how to do this: $zipPath" -verbose
-        Write-ProgressMessage  -Completed
-        return $zipPath
+            Remove-PSSession -Session $Session
+        }        
     }
 }
 
