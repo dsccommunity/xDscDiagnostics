@@ -150,7 +150,7 @@ Update-xDscEventLogStatus -Channel Analytic -Status Enabled
 ```
 
 ### Gather diagnostics from the machine running DSC or DSC Extension
-* [Install the Module](#Install the module) 
+* [Install the Module](#Install-the-module) 
 * Open an elevated PowerShell Windows
 * Run: 
 ```PowerShell
@@ -160,7 +160,7 @@ Get-xDscDiagnosticsZip
 
 
 ### Gather diagnostics from a PSSession to the machine running DSC or DSC Extension
-* [Install the Module](#Install the module)
+* [Install the Module](#Install-the-module)
 * Open an PowerShell Windows
 * Open the PSSession to the Azure VM as an administrator on the VM
 * Run:
