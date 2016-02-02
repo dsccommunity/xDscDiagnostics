@@ -46,6 +46,7 @@ function Get-FolderAsZip
                 {
                     mkdir $tempPath > $null
                 }
+                
                 $sourcePath = Join-path $logFolder '*'
                 Copy-Item -Recurse $sourcePath $tempPath -ErrorAction SilentlyContinue
 
@@ -53,8 +54,6 @@ function Get-FolderAsZip
                 $caughtError = $null
                 try 
                 {
-                    
-
                     # Copy files using the Shell.  
                     # 
                     # Note, because this uses shell this will not work on core OSs
@@ -86,23 +85,28 @@ function Get-FolderAsZip
                         $itemToAdd = (Resolve-Path $itemToAdd).ProviderPath
                         $zipFolder.copyhere( $itemToAdd )
                     }
+                    
+                    # Generate an automatic filename if filename is not supplied
                     if(!$fileName)
                     {
                         $fileName = "$([System.IO.Path]::GetFileName($logFolder))-$((Get-Date).ToString('yyyyMMddhhmmss')).zip"
                     }
+                    
                     if($destinationPath)
                     {
-                    $zipFile = Join-Path $destinationPath $fileName
+                        $zipFile = Join-Path $destinationPath $fileName
 
-                    if(!(Test-Path $destinationPath))
-                    {
-                        mkdir $destinationPath > $null
-                    }
+                        if(!(Test-Path $destinationPath))
+                        {
+                            mkdir $destinationPath > $null
+                        }
                     }
                     else
                     {
-                    $zipFile = Join-Path ([IO.Path]::GetTempPath()) ('{0}.zip' -f $fileName)
+                        $zipFile = Join-Path ([IO.Path]::GetTempPath()) ('{0}.zip' -f $fileName)
                     }
+                    
+                    # Choose appropriate implementation based on CLR version
                     if ($PSVersionTable.CLRVersion.Major -lt 4)
                     {
                         Copy-ToZipFileUsingShell -zipfilename $zipFile -itemToAdd $tempPath 
@@ -119,6 +123,7 @@ function Get-FolderAsZip
                 {
                     $caughtError = $_
                 }
+                
                 if($ReturnValue -eq 'Path')
                 {
                     # Don't return content if we don't need it
@@ -166,6 +171,7 @@ function Get-FolderAsZip
                 $gotZip = $true
             }
     }
+    
     if($ReturnValue -eq 'Path')
     {
         $result = $resultTable.zipFilePath
