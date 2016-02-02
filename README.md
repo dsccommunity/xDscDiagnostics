@@ -12,6 +12,22 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 
 The **xDscDiagnostics** module exposes two primary functions--**Get-xDscOperation** and **Trace-xDscOperation**--and one helper function--**Update-xDscEventLogStatus**--that aid in diagnosing DSC errors. Here, we use the term DSC operation to indicate the execution of any DSC cmdlet from its start to its end. For instance, Start-DscConfiguration and Test-DscConfiguration would form two separate DSC operations. The cmdlets also let you diagnose operations run on other computers. More details about their usage is given below in the Details section.
 
+## Install the module
+
+### Install the stable version module.  
+* For PowerShell Version 5 and higher running the following steps:
+	* `install-module xdscdiagnostics -Repository 'PSGallery'`
+* For PowerShell Version 4 and prior.
+	* Download the [zip of the master repo](https://github.com/PowerShell/xDscDiagnostics/archive/master.zip)
+	* Unzip the zip file to `C:\Windows\System32\WindowsPowerShell\v1.0\Modules\xDscDiagnostics` making sure the root of the zip ends up in the root of that folder.	
+	
+### Install the dev version module.  
+* For PowerShell Version 5 and higher running the following steps:
+	* `Register-PSRepository -Name xDscDiagnosticsDev -SourceLocation https://ci.appveyor.com/nuget/xdscdiagnostics -InstallationPolicy Trusted -Verbose`
+	* `install-module xdscdiagnostics -Repository 'xDscDiagnosticsDev'`
+* For PowerShell Version 4 and prior.
+	* Download the [zip of the dev repo](https://github.com/PowerShell/xDscDiagnostics/archive/dev.zip)
+	* Unzip the zip file to `C:\Windows\System32\WindowsPowerShell\v1.0\Modules\xDscDiagnostics` making sure the root of the zip ends up in the root of that folder.	
 
 ## Cmdlets
 
@@ -56,8 +72,17 @@ By using the cmdlet Update-xDscEventLogStatus, you could enable the channel requ
 You would need to execute the command `New-NetFirewallRule -Name "Service RemoteAdmin" -Action Allow` on the remote computer(s) in order to execute this operations on it.
 * **Credential**: Credentials required to access the computer given in the ComputerName property.
 
+### Get-xDscDiagnosticsZip
+This cmdlet generates a zip of DSC and DSC Extension diagnostics to send to support.
+The output will be the name of the zip file.
+The cmdlet will confirm by default.
+* **Session**: This is an optional parameter of a PSSession to use to collect the diagnostics
+			
 ## Versions
 
+### Unreleased
+* Add the Get-xDscDiagnosticsZip CmdLet 
+* 
 ### 2.0.0.0
 
 * Release with bug fixes and the following cmdlets 
@@ -123,3 +148,24 @@ By using this cmdlet, you can enable the channel collect all DSC events using th
 ```powershell
 Update-xDscEventLogStatus -Channel Analytic -Status Enabled
 ```
+
+### Gather diagnostics from the machine running DSC or DSC Extension
+* [Install the Module](#Install the module) 
+* Open an elevated PowerShell Windows
+* Run: 
+```PowerShell
+Get-xDscDiagnosticsZip
+```
+* Email the Zip that pops up to your support contact
+
+
+### Gather diagnostics from a PSSession to the machine running DSC or DSC Extension
+* [Install the Module](#Install the module)
+* Open an PowerShell Windows
+* Open the PSSession to the Azure VM as an administrator on the VM
+* Run:
+```PowerShell
+Get-xDscDiagnosticsZip -Session $SessionToVm 
+```
+* Email the Zip that pops up to your support contact
+

@@ -18,5 +18,5 @@ CLRVersion = '4.0'
 
 FunctionsToExport = @("*")
 
-NestedModules = @('xDscDiagnostics.psm1')
+NestedModules = @('xDscDiagnostics.psm1','CollectDscDiagnostics.psm1')
 }
