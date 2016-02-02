@@ -19,9 +19,15 @@ function Get-FolderAsZip
         [string] $filename
     )
 
-    if(!$Session)
+    $local = $false
+    $invokeCommandParams = @{}
+    if($Session)
     {
-        $Session = New-PSSession
+        $invokeCommandParams.Add('Session',$Session);
+    }
+    else
+    {
+        $local = $true
     }
 
     $attempts =0 
@@ -29,7 +35,7 @@ function Get-FolderAsZip
     while($attempts -lt 5 -and !$gotZip)
     {
         $attempts++
-        $resultTable = invoke-command -ErrorAction:Continue -Session $Session -script {
+        $resultTable = invoke-command -ErrorAction:Continue @invokeCommandParams -script {
                 param($logFolder, $destinationPath, $fileName, $ReturnValue)
                 $ErrorActionPreference = 'stop'
                 Set-StrictMode -Version latest
@@ -40,6 +46,7 @@ function Get-FolderAsZip
                 {
                     mkdir $tempPath > $null
                 }
+                
                 $sourcePath = Join-path $logFolder '*'
                 Copy-Item -Recurse $sourcePath $tempPath -ErrorAction SilentlyContinue
 
@@ -47,8 +54,6 @@ function Get-FolderAsZip
                 $caughtError = $null
                 try 
                 {
-                    
-
                     # Copy files using the Shell.  
                     # 
                     # Note, because this uses shell this will not work on core OSs
@@ -80,23 +85,28 @@ function Get-FolderAsZip
                         $itemToAdd = (Resolve-Path $itemToAdd).ProviderPath
                         $zipFolder.copyhere( $itemToAdd )
                     }
+                    
+                    # Generate an automatic filename if filename is not supplied
                     if(!$fileName)
                     {
                         $fileName = "$([System.IO.Path]::GetFileName($logFolder))-$((Get-Date).ToString('yyyyMMddhhmmss')).zip"
                     }
+                    
                     if($destinationPath)
                     {
-                      $zipFile = Join-Path $destinationPath $fileName
+                        $zipFile = Join-Path $destinationPath $fileName
 
-                      if(!(Test-Path $destinationPath))
-                      {
-                        mkdir $destinationPath > $null
-                      }
+                        if(!(Test-Path $destinationPath))
+                        {
+                            mkdir $destinationPath > $null
+                        }
                     }
                     else
                     {
-                      $zipFile = Join-Path ([IO.Path]::GetTempPath()) ('{0}.zip' -f $fileName)
+                        $zipFile = Join-Path ([IO.Path]::GetTempPath()) ('{0}.zip' -f $fileName)
                     }
+                    
+                    # Choose appropriate implementation based on CLR version
                     if ($PSVersionTable.CLRVersion.Major -lt 4)
                     {
                         Copy-ToZipFileUsingShell -zipfilename $zipFile -itemToAdd $tempPath 
@@ -113,6 +123,7 @@ function Get-FolderAsZip
                 {
                     $caughtError = $_
                 }
+                
                 if($ReturnValue -eq 'Path')
                 {
                     # Don't return content if we don't need it
@@ -160,6 +171,7 @@ function Get-FolderAsZip
                 $gotZip = $true
             }
     }
+    
     if($ReturnValue -eq 'Path')
     {
         $result = $resultTable.zipFilePath
@@ -206,14 +218,17 @@ function Export-EventLog
     )
     Write-Verbose "Exporting eventlog $name"
     $local = $false
-    if(!$Session)
+    $invokeCommandParams = @{}
+    if($Session)
     {
-        Write-Verbose "Session not specified, using a local Session"
-        $Session = New-PSSession
+        $invokeCommandParams.Add('Session',$Session);
+    }
+    else
+    {
         $local = $true
     }
-
-    invoke-command -ErrorAction:Continue -Session $Session -script {  
+    
+    invoke-command -ErrorAction:Continue @invokeCommandParams -script {  
         param($name, $path)
         $ErrorActionPreference = 'stop'
         Set-StrictMode -Version latest        
@@ -226,7 +241,7 @@ function Export-EventLog
 
         $ExportCommand = "$exePath epl '$Name' '$Path\$exportFileName' /ow:True 2>&1"
         Invoke-expression -command $ExportCommand
-    } -argumentlist @($Name, $path)
+    } -argumentlist @($Name, $path)        
 }
 
 #
@@ -246,11 +261,16 @@ function Get-xDscDiagnosticsZip
     )
 
     $local = $false
-    if(!$Session)
+    $invokeCommandParams = @{}
+    if($Session)
     {
-        $Session = New-PSSession
+        $invokeCommandParams.Add('Session',$Session);
+    }
+    else
+    {
         $local = $true
     }
+    
     Function Write-ProgressMessage
     {
         [CmdletBinding()]
@@ -279,7 +299,7 @@ Are you sure you want to continue
     if ($pscmdlet.ShouldProcess($privacyConfirmation)) 
     {
         
-        $tempPath = invoke-command -ErrorAction:Continue -Session $Session -script {
+        $tempPath = invoke-command -ErrorAction:Continue @invokeCommandParams -script {
                 $ErrorActionPreference = 'stop'
                 Set-StrictMode -Version latest
                 $tempPath = Join-path $env:temp ([system.io.path]::GetRandomFileName())
@@ -294,7 +314,7 @@ Are you sure you want to continue
         Write-Debug -message "tempPath: $tempPath" -verbose
 
         Write-ProgressMessage  -Status 'Finding DSC and copying Extension ...' -PercentComplete 0
-        invoke-command -ErrorAction:Continue -Session $Session -script {
+        invoke-command -ErrorAction:Continue @invokeCommandParams -script {
             param($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
@@ -310,14 +330,14 @@ Are you sure you want to continue
 
             if($dir)
             {
-              Write-Verbose -message "Found DSC extension at: $dir" -verbose
-              Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
-              Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
+            Write-Verbose -message "Found DSC extension at: $dir" -verbose
+            Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
+            Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
                     if($_.Extension -ieq '.msu')
                     {
-                      $newFileName = "$($_.FullName).wasHere"
-                      Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
-                      $_.Delete()
+                    $newFileName = "$($_.FullName).wasHere"
+                    Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
+                    $_.Delete()
                     }
                 }
             }
@@ -328,7 +348,7 @@ Are you sure you want to continue
         } -argumentlist @($tempPath)
 
         Write-ProgressMessage  -Status 'Copying log files..' -PercentComplete 1
-        invoke-command -ErrorAction:Continue -Session $Session -script {
+        invoke-command -ErrorAction:Continue @invokeCommandParams -script {
             param($tempPath)    
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
@@ -341,9 +361,9 @@ Are you sure you want to continue
         } -argumentlist @($tempPath)
 
         Write-ProgressMessage -Status 'Getting DSC Event log ...' -PercentComplete 25
-        Export-EventLog -Name Microsoft-Windows-DSC/Operational -Path $tempPath -session $session
+        Export-EventLog -Name Microsoft-Windows-DSC/Operational -Path $tempPath @invokeCommandParams
         Write-ProgressMessage  -Status 'Getting Application Event log ...' -PercentComplete 50
-        Export-EventLog -Name Application -Path $tempPath -session $session
+        Export-EventLog -Name Application -Path $tempPath @invokeCommandParams
 
         
         
@@ -351,7 +371,7 @@ Are you sure you want to continue
         if(!$destinationPath)
         {
             Write-ProgressMessage  -Status 'Getting destinationPath ...' -PercentComplete 74
-            $destinationPath = invoke-command -ErrorAction:Continue -Session $Session -script { 
+            $destinationPath = invoke-command -ErrorAction:Continue @invokeCommandParams -script { 
                 $ErrorActionPreference = 'stop'
                 Set-StrictMode -Version latest
                 Join-path $env:temp ([system.io.path]::GetRandomFileName()) 
