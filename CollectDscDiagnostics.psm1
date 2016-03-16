@@ -423,4 +423,52 @@ Are you sure you want to continue
     }
 }
 
-Export-ModuleMember -Function Get-xDscDiagnosticsZip
+# Gets the Json details for a configuration status
+function Get-XDscConfigurationDetail
+{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory=$true,ValuefromPipeline=$true)]
+    [ValidateScript({
+      if($_.CimClass.CimClassName -eq 'MSFT_DSCConfigurationStatus') 
+      {
+        return $true
+      }
+      else
+      {
+        throw 'Must be a configuration status object'
+      }
+    })]
+    [Microsoft.Management.Infrastructure.CimInstance]
+    $ConfigurationStatus
+  )
+  Process
+  {
+
+    $detailsFiles = Get-ChildItem "$env:windir\System32\Configuration\ConfigurationStatus\$($ConfigurationStatus.JobId)-*.details.json"
+    if($detailsFiles)
+    {
+      foreach($detailsFile in $detailsFiles)
+      {
+          Write-Verbose -Message "Getting details from: $($detailsFile.FullName)"
+          (Get-Content -Encoding Unicode -raw $detailsFile.FullName) | ConvertFrom-Json | foreach-object { write-output $_}
+      }
+    }
+    else
+    {
+      if($($ConfigurationStatus.type) -eq 'Consistency')
+      {
+        Write-Warning -Message "DSC does not produced details for job type: $($ConfigurationStatus.type); id: $($ConfigurationStatus.JobId)"
+      }
+      else
+      {
+        Write-Error -Message "Could not find detail for job type: $($ConfigurationStatus.type); id: $($ConfigurationStatus.JobId)"
+      }      
+    }
+  }
+}
+
+Export-ModuleMember -Function @(
+    'Get-xDscDiagnosticsZip'
+    'Get-XDscConfigurationDetail'
+)

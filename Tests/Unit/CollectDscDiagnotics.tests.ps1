@@ -128,6 +128,64 @@ try
             }
         }
         #endregion
+        
+        Describe "$($Global:ModuleName)\Get-XDscConfigurationDetail" {
+            $testFile1='TestDrive:\id-0.details.json'
+            $testFile2='TestDrive:\id-1.details.json'
+            Mock Get-ChildItem -MockWith {@([PSCustomObject]@{
+                FullName = $testFile1
+            }
+            [PSCustomObject]@{
+                FullName = $testFile2
+            }
+            )}
+            $status = new-object -TypeName 'Microsoft.Management.Infrastructure.CimInstance' -argumentList @('MSFT_DSCConfigurationStatus')                                                                                                        
+            $status.CimInstanceProperties.Add([Microsoft.Management.Infrastructure.CimProperty]::Create('JobId','id', [Microsoft.Management.Infrastructure.CimFlags]::None))  
+            $status.CimInstanceProperties.Add([Microsoft.Management.Infrastructure.CimProperty]::Create('Type','type', [Microsoft.Management.Infrastructure.CimFlags]::None))  
+            <#$status = [PSCustomObject] @{
+                CimClass=@{
+                    CimClassName='MSFT_DSCConfigurationStatus'
+                }
+                JobId='id'
+                Type='type'
+            }#>
+            @(@{
+                name='name1'
+            }
+            @{
+                name='name2'
+            }
+            ) | convertto-json | out-file $testFile1
+            @(@{
+                name='name3'
+            }
+            @{
+                name='name4'
+            }
+            ) | convertto-json | out-file $testFile2
+            context "returning records from multiple files" {
+                Write-verbose "ccn: $($status.CimClass.CimClassName)" -Verbose
+                
+                $results = $status | Get-XDscConfigurationDetail -verbose
+                it 'should return 4 records' {
+                    $results | out-string | write-verbose -verbose
+                    $results.Count | should be 4
+                }
+                it 'record 4 should be name4' {
+                    $results[3].name | should be 'name4'
+                    $results[0].name | should be 'name1'
+                }
+                
+            }
+            context "invalid input" {
+                Write-verbose "ccn: $($status.CimClass.CimClassName)" -Verbose
+                $invalidStatus = [PSCustomObject] @{JobId = 'id'; Type = 'type'}
+                
+                it 'should throw cannot process argument' {
+                    {Get-XDscConfigurationDetail -verbose -ConfigurationStatus $invalidStatus}| should throw 'Cannot process argument transformation on parameter 'ConfigurationStatus'. Cannot convert the "@{JobId=id; Type=type}" value of type "System.Management.Automation.PSCustomObject" to type "Microsoft.Management.Infrastructure.CimInstance".'
+                }
+            }
+        }
 
 
         # TODO: Pester Tests for any Helper Cmdlets
