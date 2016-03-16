@@ -164,11 +164,9 @@ try
             }
             ) | convertto-json | out-file $testFile2
             context "returning records from multiple files" {
-                Write-verbose "ccn: $($status.CimClass.CimClassName)" -Verbose
                 
                 $results = $status | Get-XDscConfigurationDetail -verbose
                 it 'should return 4 records' {
-                    $results | out-string | write-verbose -verbose
                     $results.Count | should be 4
                 }
                 it 'record 4 should be name4' {
