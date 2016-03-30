@@ -291,6 +291,9 @@ Collecting the following information, which may contain private/sensative detail
     4. The WindowsUpdate, CBS and DISM logs
     5. The output of Get-Hotfix
     6. The output of Get-DscLocalConfigurationManager
+    7. The PsVersionTable
+    8. The OS Version
+    9. The output of Get-DscConfigurationStatus -all
 
 This tool is provided for your convience, to ensure all data is collected as quickly as possible.  
 
@@ -357,7 +360,17 @@ Are you sure you want to continue
             Copy-Item $env:windir\logs\CBS\*.* $tempPath\CBS -ErrorAction SilentlyContinue
             Copy-Item $env:windir\logs\DISM\*.* $tempPath\DISM -ErrorAction SilentlyContinue
             Get-HotFix | Out-String | Out-File  $tempPath\HotFixIds.txt
-            Get-DscLocalConfigurationManager | Out-String | Out-File   $tempPath\Get-dsclcm.txt
+            $dscLcm = Get-DscLocalConfigurationManager
+            $dscLcm | Out-String | Out-File   $tempPath\Get-dsclcm.txt
+            $dscLcm | ConvertTo-Json -Depth 10 | Out-File   $tempPath\Get-dsclcm.json
+            $PSVersionTable | Out-String | Out-File   $tempPath\psVersionTable.txt
+            Get-CimInstance win32_operatingSystem | select version | out-string  | Out-File   $tempPath\osVersion.txt
+            
+            $statusCommand = get-Command -name Get-DscConfigurationStatus -ErrorAction SilentlyContinue
+            if($statusCommand)
+            { 
+                Get-DscConfigurationStatus -All | out-string  | Out-File   $tempPath\get-dscconfigurationstatus.txt
+            }
         } -argumentlist @($tempPath)
 
         Write-ProgressMessage -Status 'Getting DSC Event log ...' -PercentComplete 25
@@ -410,4 +423,52 @@ Are you sure you want to continue
     }
 }
 
-Export-ModuleMember -Function Get-xDscDiagnosticsZip
+# Gets the Json details for a configuration status
+function Get-XDscConfigurationDetail
+{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory=$true,ValuefromPipeline=$true)]
+    [ValidateScript({
+      if($_.CimClass.CimClassName -eq 'MSFT_DSCConfigurationStatus') 
+      {
+        return $true
+      }
+      else
+      {
+        throw 'Must be a configuration status object'
+      }
+    })]
+    [Microsoft.Management.Infrastructure.CimInstance]
+    $ConfigurationStatus
+  )
+  Process
+  {
+
+    $detailsFiles = Get-ChildItem "$env:windir\System32\Configuration\ConfigurationStatus\$($ConfigurationStatus.JobId)-*.details.json"
+    if($detailsFiles)
+    {
+      foreach($detailsFile in $detailsFiles)
+      {
+          Write-Verbose -Message "Getting details from: $($detailsFile.FullName)"
+          (Get-Content -Encoding Unicode -raw $detailsFile.FullName) | ConvertFrom-Json | foreach-object { write-output $_}
+      }
+    }
+    else
+    {
+      if($($ConfigurationStatus.type) -eq 'Consistency')
+      {
+        Write-Warning -Message "DSC does not produced details for job type: $($ConfigurationStatus.type); id: $($ConfigurationStatus.JobId)"
+      }
+      else
+      {
+        Write-Error -Message "Could not find detail for job type: $($ConfigurationStatus.type); id: $($ConfigurationStatus.JobId)"
+      }      
+    }
+  }
+}
+
+Export-ModuleMember -Function @(
+    'Get-xDscDiagnosticsZip'
+    'Get-XDscConfigurationDetail'
+)

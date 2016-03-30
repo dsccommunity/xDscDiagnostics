@@ -82,7 +82,12 @@ The cmdlet will confirm by default.
 
 ### Unreleased
 
+### 2.2.0.0
+
+* Add the Get-XDscConfigurationDetail cmdlet
+
 ### 2.1.0.0
+
 * Add the Get-xDscDiagnosticsZip CmdLet 
 
 ### 2.0.0.0
@@ -170,4 +175,32 @@ Get-xDscDiagnosticsZip
 Get-xDscDiagnosticsZip -Session $SessionToVm 
 ```
 * Email the Zip that pops up to your support contact
+
+
+### Get the details of the last operation DSC performed
+
+* Gets the verbose details of the Configuration Status object you pass to it.
+
+``` PowerShell
+Start-DscConfiguration .\Example -Wait
+Get-DscConfigurationStatus | Get-XDscConfigurationDetail
+```
+
+Example output
+
+```
+time                         type    message                                                                     
+----                         ----    -------                                                                     
+2016-03-16T12:45:17.756-7:00 verbose [tplunktower]: LCM:  [ Start  Set      ]                                    
+2016-03-16T12:45:18.272-7:00 verbose [tplunktower]: LCM:  [ Start  Resource ]  [[Log]example]                    
+2016-03-16T12:45:18.273-7:00 verbose [tplunktower]: LCM:  [ Start  Test     ]  [[Log]example]                    
+2016-03-16T12:45:18.273-7:00 verbose [tplunktower]: LCM:  [ End    Test     ]  [[Log]example]  in 0.0000 seconds.
+2016-03-16T12:45:18.273-7:00 verbose [tplunktower]: LCM:  [ Start  Set      ]  [[Log]example]                    
+2016-03-16T12:45:18.274-7:00 verbose [tplunktower]:                            [[Log]example] example            
+2016-03-16T12:45:18.274-7:00 verbose [tplunktower]: LCM:  [ End    Set      ]  [[Log]example]  in 0.0010 seconds.
+2016-03-16T12:45:18.274-7:00 verbose [tplunktower]: LCM:  [ End    Resource ]  [[Log]example]                    
+2016-03-16T12:45:18.278-7:00 verbose [tplunktower]: LCM:  [ End    Set      ]                                    
+2016-03-16T12:45:18.279-7:00 verbose [tplunktower]: LCM:  [ End    Set      ]    in  0.5230 seconds.             
+
+```
 
