@@ -82,6 +82,8 @@ The cmdlet will confirm by default.
 
 ### Unreleased
 
+### 2.2.0.0
+
 * Add the Get-XDscConfigurationDetail cmdlet
 
 ### 2.1.0.0
