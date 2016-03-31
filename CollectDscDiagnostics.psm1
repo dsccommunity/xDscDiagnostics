@@ -287,7 +287,7 @@ Collecting the following information, which may contain private/sensative detail
     2.   The state of the Azure DSC Extension, 
        including their configuration, configuration data (but not any decryption keys)
        and included or generated files.
-    3.   The DSC, System and application event logs.
+    3. The DSC, System and application event logs.
     4. The WindowsUpdate, CBS and DISM logs
     5. The output of Get-Hotfix
     6. The output of Get-DscLocalConfigurationManager
@@ -295,6 +295,7 @@ Collecting the following information, which may contain private/sensative detail
     8. The OS Version
     9. The output of Get-DscConfigurationStatus -all
     10. The local machine cert thumbprints.
+    11. The name, version and path to installed dsc resources.
 
 This tool is provided for your convience, to ensure all data is collected as quickly as possible.  
 
