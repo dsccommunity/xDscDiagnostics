@@ -18,6 +18,8 @@ CLRVersion = '4.0'
 
 FunctionsToExport = @("*")
 
+AliasesToExport = '*'
+
 NestedModules = @('xDscDiagnostics.psm1','CollectDscDiagnostics.psm1')
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
