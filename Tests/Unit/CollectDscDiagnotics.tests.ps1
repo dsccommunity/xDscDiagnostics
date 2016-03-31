@@ -150,7 +150,11 @@ try
                 mock Get-DscLocalConfigurationManager -MockWith {[PSCustomObject]@{mockedmeta='meta1'}}
                 mock Get-CimInstance -MockWith {[PSCustomObject]@{mockedwin32os='os1'}}
                 mock Get-DSCResource -MockWith {[PSCustomObject]@{mockedresource='resource1'}}
-                mock Get-DscConfigurationStatus -MockWith {[PSCustomObject]@{mockedstatus='status1'}}
+                $statusCommand = get-Command -name Get-DscConfigurationStatus -ErrorAction SilentlyContinue
+                if($statusCommand)
+                { 
+                    mock Get-DscConfigurationStatus -MockWith {[PSCustomObject]@{mockedstatus='status1'}}
+                }
                 Mock Get-FolderAsZip -MockWith {}
                 Mock Start-Process -MockWith {}
                 mock Export-EventLog -MockWith {}
@@ -164,7 +168,10 @@ try
                     Assert-MockCalled -CommandName Get-DscLocalConfigurationManager -Times 1 -Exactly
                     Assert-MockCalled -CommandName Get-CimInstance -Times 1 -Exactly
                     Assert-MockCalled -CommandName Get-DSCResource -Times 1 -Exactly
-                    Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
+                    if($statusCommand)
+                    { 
+                        Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
+                    }
                     Assert-MockCalled -CommandName Export-EventLog -Times 3 -Exactly
                 }
             }
