@@ -251,9 +251,9 @@ function Export-EventLog
 # on the specified session, if the session is not specified
 # a session to the local machine will be used
 #
-function Get-xDscDiagnosticsZip
+function New-xDscDiagnosticsZip
 {
-    [CmdletBinding(    SupportsShouldProcess=$true,        ConfirmImpact="High"    )]
+    [CmdletBinding(    SupportsShouldProcess=$true,        ConfirmImpact='High'    )]
     param(        
         [System.Management.Automation.Runspaces.PSSession] $Session,
         [string] $destinationPath,
@@ -287,13 +287,15 @@ Collecting the following information, which may contain private/sensative detail
     2.   The state of the Azure DSC Extension, 
        including their configuration, configuration data (but not any decryption keys)
        and included or generated files.
-    3.   The DSC and application event logs.
+    3. The DSC, System and application event logs.
     4. The WindowsUpdate, CBS and DISM logs
     5. The output of Get-Hotfix
     6. The output of Get-DscLocalConfigurationManager
     7. The PsVersionTable
     8. The OS Version
     9. The output of Get-DscConfigurationStatus -all
+    10. The local machine cert thumbprints.
+    11. The name, version and path to installed dsc resources.
 
 This tool is provided for your convience, to ensure all data is collected as quickly as possible.  
 
@@ -321,32 +323,29 @@ Are you sure you want to continue
             param($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
-            $dirs = @(Get-ChildItem C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue) 
+            $dirs = @(Get-ChildItem -Path C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue) 
             $dir = $null
             if($dirs.Count -ge 1)
             {
-                $dir = @(Get-ChildItem C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue)[0].FullName
+                $dir = $dirs[0].FullName
             }
-            
-
-
 
             if($dir)
             {
-            Write-Verbose -message "Found DSC extension at: $dir" -verbose
-            Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
-            Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
-                    if($_.Extension -ieq '.msu')
-                    {
-                    $newFileName = "$($_.FullName).wasHere"
-                    Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
-                    $_.Delete()
+                Write-Verbose -message "Found DSC extension at: $dir" -verbose
+                Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
+                Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
+                        if($_.Extension -ieq '.msu' -or ($_.Extension -ieq '.zip' -and $_.BaseName -like 'Microsoft.Powershell*DSC_*.*.*.*'))
+                        {
+                            $newFileName = "$($_.FullName).wasHere"
+                            Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
+                            $_.Delete()
+                        }
                     }
-                }
             }
             else 
             { 
-                Write-Verbose -message "Did not find DSC extension." -verbose
+                Write-Verbose -message 'Did not find DSC extension.' -verbose
             }
         } -argumentlist @($tempPath)
 
@@ -365,6 +364,8 @@ Are you sure you want to continue
             $dscLcm | ConvertTo-Json -Depth 10 | Out-File   $tempPath\Get-dsclcm.json
             $PSVersionTable | Out-String | Out-File   $tempPath\psVersionTable.txt
             Get-CimInstance win32_operatingSystem | select version | out-string  | Out-File   $tempPath\osVersion.txt
+            dir Cert:\LocalMachine\My\ |select -ExpandProperty Thumbprint | out-string | out-file $tempPath\LocalMachineCertThumbprints.txt
+            Get-DscResource 2>$null | select name, version, path | out-string | out-file $tempPath\ResourceInfo.txt 
             
             $statusCommand = get-Command -name Get-DscConfigurationStatus -ErrorAction SilentlyContinue
             if($statusCommand)
@@ -377,6 +378,9 @@ Are you sure you want to continue
         Export-EventLog -Name Microsoft-Windows-DSC/Operational -Path $tempPath @invokeCommandParams
         Write-ProgressMessage  -Status 'Getting Application Event log ...' -PercentComplete 50
         Export-EventLog -Name Application -Path $tempPath @invokeCommandParams
+        Write-ProgressMessage  -Status 'Getting System Event log ...' -PercentComplete 65
+        Export-EventLog -Name System -Path $tempPath @invokeCommandParams
+
 
         
         
@@ -422,6 +426,7 @@ Are you sure you want to continue
         return $zipPath
     }
 }
+New-Alias -Name Get-xDscDiagnosticsZip -Value New-xDscDiagnosticsZip
 
 # Gets the Json details for a configuration status
 function Get-XDscConfigurationDetail
@@ -469,6 +474,6 @@ function Get-XDscConfigurationDetail
 }
 
 Export-ModuleMember -Function @(
-    'Get-xDscDiagnosticsZip'
+    'New-xDscDiagnosticsZip'
     'Get-XDscConfigurationDetail'
-)
+) -Alias 'Get-xDscDiagnosticsZip'
