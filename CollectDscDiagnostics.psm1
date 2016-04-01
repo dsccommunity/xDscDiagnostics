@@ -253,7 +253,7 @@ function Export-EventLog
 #
 function New-xDscDiagnosticsZip
 {
-    [CmdletBinding(    SupportsShouldProcess=$true,        ConfirmImpact="High"    )]
+    [CmdletBinding(    SupportsShouldProcess=$true,        ConfirmImpact='High'    )]
     param(        
         [System.Management.Automation.Runspaces.PSSession] $Session,
         [string] $destinationPath,
@@ -332,20 +332,20 @@ Are you sure you want to continue
 
             if($dir)
             {
-            Write-Verbose -message "Found DSC extension at: $dir" -verbose
-            Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
-            Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
-                    if($_.Extension -ieq '.msu')
-                    {
-                    $newFileName = "$($_.FullName).wasHere"
-                    Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
-                    $_.Delete()
+                Write-Verbose -message "Found DSC extension at: $dir" -verbose
+                Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
+                Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
+                        if($_.Extension -ieq '.msu' -or ($_.Extension -ieq '.zip' -and $_.BaseName -like 'Microsoft.Powershell*DSC_*.*.*.*'))
+                        {
+                            $newFileName = "$($_.FullName).wasHere"
+                            Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
+                            $_.Delete()
+                        }
                     }
-                }
             }
             else 
             { 
-                Write-Verbose -message "Did not find DSC extension." -verbose
+                Write-Verbose -message 'Did not find DSC extension.' -verbose
             }
         } -argumentlist @($tempPath)
 
