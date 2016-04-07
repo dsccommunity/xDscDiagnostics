@@ -88,6 +88,7 @@ The cmdlet will confirm by default.
     * Collected installed DSC resource version and path information
     * Collected System event log
 * Added more detailed tests for New-xDscDiagnosticsZip 
+* Added Unprotect-xDscConfigurtion to decrypt current, pending or previous mofs
 
 ### 2.2.0.0
 
@@ -209,5 +210,54 @@ time                         type    message
 2016-03-16T12:45:18.278-7:00 verbose [tplunktower]: LCM:  [ End    Set      ]                                    
 2016-03-16T12:45:18.279-7:00 verbose [tplunktower]: LCM:  [ End    Set      ]    in  0.5230 seconds.             
 
+```
+
+
+### Decrypt the current mof
+
+* Decrypts the current mof LCM is using.  **Must be run as administrator**
+
+``` PowerShell
+Unprotect-xDscConfigurtion -Stage Previous
+```
+
+Example output
+
+```
+﻿/*
+@TargetNode='localhost'
+@GeneratedBy=tplunk
+@GenerationDate=04/07/2016 16:54:16
+@GenerationHost=localhost
+*/
+
+instance of MSFT_LogResource as $MSFT_LogResource1ref
+{
+SourceInfo = "::1::24::log";
+ ModuleName = "PsDesiredStateConfiguration";
+ ResourceID = "[Log]example";
+ Message = "example";
+
+ModuleVersion = "1.0";
+ ConfigurationName = "example";
+};
+instance of OMI_ConfigurationDocument
+
+                    {
+ Version="2.0.0";
+
+                        MinimumCompatibleVersion = "1.0.0";
+
+                        CompatibleVersionAdditionalProperties= {"Omi_BaseResource:ConfigurationName"};
+
+                        Author="tplunk";
+
+                        GenerationDate="04/07/2016 16:54:16";
+
+                        GenerationHost="localhost";
+
+                        Name="example";
+
+                    };
 ```
 
