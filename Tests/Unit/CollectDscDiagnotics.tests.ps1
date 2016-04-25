@@ -42,7 +42,7 @@ try
     InModuleScope $Global:ModuleName {
 
         #region Pester Test Initialization
-        # TODO: Optopnal Load Mock for use in Pester tests here...
+        # TODO: Optional Load Mock for use in Pester tests here...
         #endregion
 
 
@@ -155,6 +155,8 @@ try
                 { 
                     mock Get-DscConfigurationStatus -MockWith {[PSCustomObject]@{mockedstatus='status1'}}
                 }
+                mock Get-Content -MockWith {[PSCustomObject]@{mockedEngineCache='engineCache1'}}
+                
                 Mock Get-FolderAsZip -MockWith {}
                 Mock Start-Process -MockWith {}
                 mock Export-EventLog -MockWith {}
@@ -168,6 +170,7 @@ try
                     Assert-MockCalled -CommandName Get-DscLocalConfigurationManager -Times 1 -Exactly
                     Assert-MockCalled -CommandName Get-CimInstance -Times 1 -Exactly
                     Assert-MockCalled -CommandName Get-DSCResource -Times 1 -Exactly
+                    Assert-MockCalled -CommandName Get-Content -Times 1 -Exactly
                     if($statusCommand)
                     { 
                         Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
