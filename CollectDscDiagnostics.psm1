@@ -296,6 +296,7 @@ Collecting the following information, which may contain private/sensative detail
     9. The output of Get-DscConfigurationStatus -all
     10. The local machine cert thumbprints.
     11. The name, version and path to installed dsc resources.
+    12. The contents of the DscEngineCache.mof file
 
 This tool is provided for your convience, to ensure all data is collected as quickly as possible.  
 
@@ -372,6 +373,9 @@ Are you sure you want to continue
             { 
                 Get-DscConfigurationStatus -All | out-string  | Out-File   $tempPath\get-dscconfigurationstatus.txt
             }
+
+            Get-Content "$env:windir\system32\configuration\DscEngineCache.mof" | Out-File $tempPath\DscEngineCache.txt                        
+
         } -argumentlist @($tempPath)
 
         Write-ProgressMessage -Status 'Getting DSC Event log ...' -PercentComplete 25
