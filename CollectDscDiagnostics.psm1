@@ -245,6 +245,40 @@ function Export-EventLog
 }
 
 #
+# Checks if this machine is a Server SKU
+#
+function Test-ServerSku
+{
+    [CmdletBinding()]
+    $os = Get-CimInstance -ClassName  Win32_OperatingSystem
+    $isServerSku = ($os.ProductType -ne 1)
+}
+
+#
+# Verifies if Pull Server is installed on this machine
+#
+function Test-PullServerPresent
+{
+    [CmdletBinding()]
+    
+    $isPullServerPresent = $false;   
+
+    $isServerSku = Test-ServerSku
+
+    if ($isServerSku)
+    {
+        Write-Verbose "This is a Server machine"
+        $website = Get-WebSite PSDSCPullServer -erroraction silentlycontinue
+        if ($website -ne $null)
+        {
+            $isPullServerPresent = $true
+        }        
+    }    
+
+    return $isPullServerPresent
+}
+
+#
 # Gathers diagnostics for DSC and the DSC Extension into a zipfile 
 # if specified, in the specified path
 # if specified, in the specified filename
@@ -297,6 +331,7 @@ Collecting the following information, which may contain private/sensative detail
     10. The local machine cert thumbprints.
     11. The name, version and path to installed dsc resources.
     12. The contents of the DscEngineCache.mof file
+    13. DSC Pull Server logs (if this machine has been set up as a DSC Pull Server)
 
 This tool is provided for your convience, to ensure all data is collected as quickly as possible.  
 
@@ -386,7 +421,16 @@ Are you sure you want to continue
         Export-EventLog -Name System -Path $tempPath @invokeCommandParams
 
 
-        
+        if (Test-PullServerPresent)
+        {
+            Write-Verbose "This machine has been set up as DSC Pull Server"
+            Write-ProgressMessage -Status 'Getting DSC Pull Server Event log ...' -PercentComplete 25
+            Export-EventLog -Name Microsoft-Windows-PowerShell-DesiredStateConfiguration-PullServer/Operational -path $tempPath @invokeCommandParams            
+        }
+        else
+        {
+            Write-Verbose "This machine has not been set up as a DSC Pull Server"
+        }        
         
         
         if(!$destinationPath)

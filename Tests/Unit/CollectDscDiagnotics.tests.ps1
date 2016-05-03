@@ -160,6 +160,7 @@ try
                 Mock Get-FolderAsZip -MockWith {}
                 Mock Start-Process -MockWith {}
                 mock Export-EventLog -MockWith {}
+                mock Test-PullServerPresent -MockWith {$true}
                 
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
@@ -175,9 +176,10 @@ try
                     { 
                         Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
                     }
-                    Assert-MockCalled -CommandName Export-EventLog -Times 3 -Exactly
-                }
-            }
+                    Assert-MockCalled -CommandName Export-EventLog -Times 4 -Exactly
+                }                
+            }           
+
             context 'verify alias' {
                 it 'should be aliased' {
                     (get-alias -Name Get-xDscDiagnosticsZip).ResolvedCommand.Name | should be 'New-xDscDiagnosticsZip'
