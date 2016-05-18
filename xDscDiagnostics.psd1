@@ -3,7 +3,7 @@
 @{
 
 
-ModuleVersion = '2.2.0.0'
+ModuleVersion = '2.3.0.0'
 GUID = 'ef098cb4-f7e9-4763-b636-0cd9799e1c9a'
 
 Author = 'Microsoft Corporation'
@@ -40,7 +40,15 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = '* Renamed Get-xDscDiagnosticsZip to New-xDscDiagnosticsZip CmdLet and aliased to Get-xDscDiagnosticsZip to prevent breaks
+* Added the following datapoint to New-xDscDiagnosticsZip:
+    * Collected local machine cert thumbprints
+    * Collected installed DSC resource version and path information
+    * Collected System event log
+* Added more detailed tests for New-xDscDiagnosticsZip 
+* Added Unprotect-xDscConfigurtion to decrypt current, pending or previous mofs
+
+'
 
     } # End of PSData hashtable
 

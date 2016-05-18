@@ -82,6 +82,8 @@ The cmdlet will confirm by default.
 
 ### Unreleased
 
+### 2.3.0.0
+
 * Renamed Get-xDscDiagnosticsZip to New-xDscDiagnosticsZip CmdLet and aliased to Get-xDscDiagnosticsZip to prevent breaks
 * Added the following datapoint to New-xDscDiagnosticsZip:
     * Collected local machine cert thumbprints
