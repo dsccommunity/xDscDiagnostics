@@ -245,15 +245,49 @@ function Export-EventLog
 }
 
 #
+# Checks if this machine is a Server SKU
+#
+function Test-ServerSku
+{
+    [CmdletBinding()]
+    $os = Get-CimInstance -ClassName  Win32_OperatingSystem
+    $isServerSku = ($os.ProductType -ne 1)
+}
+
+#
+# Verifies if Pull Server is installed on this machine
+#
+function Test-PullServerPresent
+{
+    [CmdletBinding()]
+    
+    $isPullServerPresent = $false;   
+
+    $isServerSku = Test-ServerSku
+
+    if ($isServerSku)
+    {
+        Write-Verbose "This is a Server machine"
+        $website = Get-WebSite PSDSCPullServer -erroraction silentlycontinue
+        if ($website -ne $null)
+        {
+            $isPullServerPresent = $true
+        }        
+    }    
+
+    return $isPullServerPresent
+}
+
+#
 # Gathers diagnostics for DSC and the DSC Extension into a zipfile 
 # if specified, in the specified path
 # if specified, in the specified filename
 # on the specified session, if the session is not specified
 # a session to the local machine will be used
 #
-function Get-xDscDiagnosticsZip
+function New-xDscDiagnosticsZip
 {
-    [CmdletBinding(    SupportsShouldProcess=$true,        ConfirmImpact="High"    )]
+    [CmdletBinding(    SupportsShouldProcess=$true,        ConfirmImpact='High'    )]
     param(        
         [System.Management.Automation.Runspaces.PSSession] $Session,
         [string] $destinationPath,
@@ -287,13 +321,17 @@ Collecting the following information, which may contain private/sensative detail
     2.   The state of the Azure DSC Extension, 
        including their configuration, configuration data (but not any decryption keys)
        and included or generated files.
-    3.   The DSC and application event logs.
+    3. The DSC, System and application event logs.
     4. The WindowsUpdate, CBS and DISM logs
     5. The output of Get-Hotfix
     6. The output of Get-DscLocalConfigurationManager
     7. The PsVersionTable
     8. The OS Version
     9. The output of Get-DscConfigurationStatus -all
+    10. The local machine cert thumbprints.
+    11. The name, version and path to installed dsc resources.
+    12. The contents of the DscEngineCache.mof file
+    13. DSC Pull Server logs (if this machine has been set up as a DSC Pull Server)
 
 This tool is provided for your convience, to ensure all data is collected as quickly as possible.  
 
@@ -321,32 +359,29 @@ Are you sure you want to continue
             param($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
-            $dirs = @(Get-ChildItem C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue) 
+            $dirs = @(Get-ChildItem -Path C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue) 
             $dir = $null
             if($dirs.Count -ge 1)
             {
-                $dir = @(Get-ChildItem C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue)[0].FullName
+                $dir = $dirs[0].FullName
             }
-            
-
-
 
             if($dir)
             {
-            Write-Verbose -message "Found DSC extension at: $dir" -verbose
-            Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
-            Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
-                    if($_.Extension -ieq '.msu')
-                    {
-                    $newFileName = "$($_.FullName).wasHere"
-                    Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
-                    $_.Delete()
+                Write-Verbose -message "Found DSC extension at: $dir" -verbose
+                Copy-Item -Recurse $dir $tempPath\DscPackageFolder -ErrorAction SilentlyContinue 
+                Get-ChildItem "$tempPath\DscPackageFolder" -Recurse | %{
+                        if($_.Extension -ieq '.msu' -or ($_.Extension -ieq '.zip' -and $_.BaseName -like 'Microsoft.Powershell*DSC_*.*.*.*'))
+                        {
+                            $newFileName = "$($_.FullName).wasHere"
+                            Get-ChildItem $_.FullName | Out-String | Out-File $newFileName -Force
+                            $_.Delete()
+                        }
                     }
-                }
             }
             else 
             { 
-                Write-Verbose -message "Did not find DSC extension." -verbose
+                Write-Verbose -message 'Did not find DSC extension.' -verbose
             }
         } -argumentlist @($tempPath)
 
@@ -365,20 +400,37 @@ Are you sure you want to continue
             $dscLcm | ConvertTo-Json -Depth 10 | Out-File   $tempPath\Get-dsclcm.json
             $PSVersionTable | Out-String | Out-File   $tempPath\psVersionTable.txt
             Get-CimInstance win32_operatingSystem | select version | out-string  | Out-File   $tempPath\osVersion.txt
+            dir Cert:\LocalMachine\My\ |select -ExpandProperty Thumbprint | out-string | out-file $tempPath\LocalMachineCertThumbprints.txt
+            Get-DscResource 2>$null | select name, version, path | out-string | out-file $tempPath\ResourceInfo.txt 
             
             $statusCommand = get-Command -name Get-DscConfigurationStatus -ErrorAction SilentlyContinue
             if($statusCommand)
             { 
                 Get-DscConfigurationStatus -All | out-string  | Out-File   $tempPath\get-dscconfigurationstatus.txt
             }
+
+            Get-Content "$env:windir\system32\configuration\DscEngineCache.mof" | Out-File $tempPath\DscEngineCache.txt                        
+
         } -argumentlist @($tempPath)
 
         Write-ProgressMessage -Status 'Getting DSC Event log ...' -PercentComplete 25
         Export-EventLog -Name Microsoft-Windows-DSC/Operational -Path $tempPath @invokeCommandParams
         Write-ProgressMessage  -Status 'Getting Application Event log ...' -PercentComplete 50
         Export-EventLog -Name Application -Path $tempPath @invokeCommandParams
+        Write-ProgressMessage  -Status 'Getting System Event log ...' -PercentComplete 65
+        Export-EventLog -Name System -Path $tempPath @invokeCommandParams
 
-        
+
+        if (Test-PullServerPresent)
+        {
+            Write-Verbose "This machine has been set up as DSC Pull Server"
+            Write-ProgressMessage -Status 'Getting DSC Pull Server Event log ...' -PercentComplete 25
+            Export-EventLog -Name Microsoft-Windows-PowerShell-DesiredStateConfiguration-PullServer/Operational -path $tempPath @invokeCommandParams            
+        }
+        else
+        {
+            Write-Verbose "This machine has not been set up as a DSC Pull Server"
+        }        
         
         
         if(!$destinationPath)
@@ -422,6 +474,7 @@ Are you sure you want to continue
         return $zipPath
     }
 }
+New-Alias -Name Get-xDscDiagnosticsZip -Value New-xDscDiagnosticsZip
 
 # Gets the Json details for a configuration status
 function Get-XDscConfigurationDetail
@@ -468,7 +521,42 @@ function Get-XDscConfigurationDetail
   }
 }
 
+# decrypt one of the lcm mof
+function Unprotect-xDscConfigurtion
+{
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory=$true,ValuefromPipeline=$true)]
+    [ValidateSet('Current','Pending','Previous')]
+    $Stage
+  )
+    
+    Add-Type -AssemblyName System.Security
+    
+    $path =  "$env:windir\System32\Configuration\$stage.mof"
+    
+    if(Test-Path $path)
+    {
+
+        $secureString = Get-Content $path -Raw 
+
+        $enc = [system.Text.Encoding]::Default 
+
+        $data = $enc.GetBytes($secureString)  
+
+        $bytes = [System.Security.Cryptography.ProtectedData]::Unprotect( $data, $null, [System.Security.Cryptography.DataProtectionScope]::LocalMachine ) 
+
+        $enc = [system.text.encoding]::Unicode 
+
+        $enc.GetString($bytes)
+    }
+    else {
+        throw (New-Object -TypeName 'System.IO.FileNotFoundException' -ArgumentList @("The stage $stage was not found"))
+    } 
+}
+
 Export-ModuleMember -Function @(
-    'Get-xDscDiagnosticsZip'
+    'New-xDscDiagnosticsZip'
     'Get-XDscConfigurationDetail'
-)
+    'Unprotect-xDscConfigurtion'
+) -Alias 'Get-xDscDiagnosticsZip'

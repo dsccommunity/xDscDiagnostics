@@ -72,7 +72,7 @@ By using the cmdlet Update-xDscEventLogStatus, you could enable the channel requ
 You would need to execute the command `New-NetFirewallRule -Name "Service RemoteAdmin" -Action Allow` on the remote computer(s) in order to execute this operations on it.
 * **Credential**: Credentials required to access the computer given in the ComputerName property.
 
-### Get-xDscDiagnosticsZip
+### New-xDscDiagnosticsZip
 This cmdlet generates a zip of DSC and DSC Extension diagnostics to send to support.
 The output will be the name of the zip file.
 The cmdlet will confirm by default.
@@ -81,6 +81,16 @@ The cmdlet will confirm by default.
 ## Versions
 
 ### Unreleased
+
+### 2.3.0.0
+
+* Renamed Get-xDscDiagnosticsZip to New-xDscDiagnosticsZip CmdLet and aliased to Get-xDscDiagnosticsZip to prevent breaks
+* Added the following datapoint to New-xDscDiagnosticsZip:
+    * Collected local machine cert thumbprints
+    * Collected installed DSC resource version and path information
+    * Collected System event log
+* Added more detailed tests for New-xDscDiagnosticsZip 
+* Added Unprotect-xDscConfigurtion to decrypt current, pending or previous mofs
 
 ### 2.2.0.0
 
@@ -161,7 +171,7 @@ Update-xDscEventLogStatus -Channel Analytic -Status Enabled
 * Open an elevated PowerShell Windows
 * Run: 
 ```PowerShell
-Get-xDscDiagnosticsZip
+New-xDscDiagnosticsZip
 ```
 * Email the Zip that pops up to your support contact
 
@@ -172,7 +182,7 @@ Get-xDscDiagnosticsZip
 * Open the PSSession to the Azure VM as an administrator on the VM
 * Run:
 ```PowerShell
-Get-xDscDiagnosticsZip -Session $SessionToVm 
+New-xDscDiagnosticsZip -Session $SessionToVm 
 ```
 * Email the Zip that pops up to your support contact
 
@@ -202,5 +212,54 @@ time                         type    message
 2016-03-16T12:45:18.278-7:00 verbose [tplunktower]: LCM:  [ End    Set      ]                                    
 2016-03-16T12:45:18.279-7:00 verbose [tplunktower]: LCM:  [ End    Set      ]    in  0.5230 seconds.             
 
+```
+
+
+### Decrypt the current mof
+
+* Decrypts the current mof LCM is using.  **Must be run as administrator**
+
+``` PowerShell
+Unprotect-xDscConfigurtion -Stage Previous
+```
+
+Example output
+
+```
+﻿/*
+@TargetNode='localhost'
+@GeneratedBy=tplunk
+@GenerationDate=04/07/2016 16:54:16
+@GenerationHost=localhost
+*/
+
+instance of MSFT_LogResource as $MSFT_LogResource1ref
+{
+SourceInfo = "::1::24::log";
+ ModuleName = "PsDesiredStateConfiguration";
+ ResourceID = "[Log]example";
+ Message = "example";
+
+ModuleVersion = "1.0";
+ ConfigurationName = "example";
+};
+instance of OMI_ConfigurationDocument
+
+                    {
+ Version="2.0.0";
+
+                        MinimumCompatibleVersion = "1.0.0";
+
+                        CompatibleVersionAdditionalProperties= {"Omi_BaseResource:ConfigurationName"};
+
+                        Author="tplunk";
+
+                        GenerationDate="04/07/2016 16:54:16";
+
+                        GenerationHost="localhost";
+
+                        Name="example";
+
+                    };
 ```
 
