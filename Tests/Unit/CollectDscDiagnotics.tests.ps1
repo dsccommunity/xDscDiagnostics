@@ -176,7 +176,7 @@ try
                     { 
                         Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
                     }
-                    Assert-MockCalled -CommandName Export-EventLog -Times 4 -Exactly
+                    Assert-MockCalled -CommandName Export-EventLog -Times 5 -Exactly
                 }                
             }           
 
