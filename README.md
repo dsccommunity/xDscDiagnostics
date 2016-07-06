@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/p2vv1iwqcks4sk8m/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xdscdiagnostics/branch/master)
+﻿[![Build status](https://ci.appveyor.com/api/projects/status/p2vv1iwqcks4sk8m/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xdscdiagnostics/branch/master)
 
 # xDscDiagnostics
 
@@ -84,6 +84,7 @@ The cmdlet will confirm by default.
 ## Versions
 
 ### Unreleased
+* Converted appveyor.yml to install Pester from PSGallery instead of from Chocolatey.
 
 ### 2.3.0.0
 
