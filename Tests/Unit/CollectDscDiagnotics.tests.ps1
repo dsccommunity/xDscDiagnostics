@@ -50,11 +50,11 @@ try
         Describe "$($Global:ModuleName)\Get-FolderAsZip" {
             Context -Name 'Without Session returning path' -Fixture {
                     <#[string]$sourceFolder,
-        [string] $destinationPath,
-        [System.Management.Automation.Runspaces.PSSession] $Session,
-        [ValidateSet('Path','Content')]
-        [string] $ReturnValue = 'Path',
-        [string] $filename#>
+              [string] $destinationPath,
+              [System.Management.Automation.Runspaces.PSSession] $Session,
+              [ValidateSet('Path','Content')]
+              [string] $ReturnValue = 'Path',
+          [string] $filename#>
                 It 'Should zip a text file' {
                     $testFolder = 'testdrive:\ziptest'
                     md $testFolder > $null
@@ -146,6 +146,9 @@ try
                         '' | out-file $destination -ErrorAction SilentlyContinue
                     } -ParameterFilter {$path -notmatch '\*.\*'}
                 Mock Copy-Item -MockWith {} -ParameterFilter {$path -match '\*.\*'}
+                Mock Test-Path -MockWith {
+                        $true
+                    } -ParameterFilter {$Path -eq "$env:windir\system32\configuration\DscEngineCache.mof"}
                 mock Get-hotfix -MockWith {[PSCustomObject]@{mockedhotix='kb1'}}
                 mock Get-DscLocalConfigurationManager -MockWith {[PSCustomObject]@{mockedmeta='meta1'}}
                 mock Get-CimInstance -MockWith {[PSCustomObject]@{mockedwin32os='os1'}}
@@ -160,7 +163,7 @@ try
                 Mock Get-FolderAsZip -MockWith {}
                 Mock Start-Process -MockWith {}
                 mock Export-EventLog -MockWith {}
-                mock Test-PullServerPresent -MockWith {$true}
+                mock Test-PullServerPresent -MockWith {$true}                
                 
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
@@ -176,9 +179,9 @@ try
                     { 
                         Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
                     }
-                    Assert-MockCalled -CommandName Export-EventLog -Times 4 -Exactly
-                }                
-            }           
+                    Assert-MockCalled -CommandName Export-EventLog -Times 5 -Exactly
+                }
+            }
 
             context 'verify alias' {
                 it 'should be aliased' {

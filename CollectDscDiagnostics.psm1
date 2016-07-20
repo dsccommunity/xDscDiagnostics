@@ -332,6 +332,7 @@ Collecting the following information, which may contain private/sensative detail
     11. The name, version and path to installed dsc resources.
     12. The contents of the DscEngineCache.mof file
     13. DSC Pull Server logs (if this machine has been set up as a DSC Pull Server)
+    14. Management OData logs (if this machine has been set up as a DSC Pull Server)
 
 This tool is provided for your convience, to ensure all data is collected as quickly as possible.  
 
@@ -409,7 +410,10 @@ Are you sure you want to continue
                 Get-DscConfigurationStatus -All | out-string  | Out-File   $tempPath\get-dscconfigurationstatus.txt
             }
 
-            Get-Content "$env:windir\system32\configuration\DscEngineCache.mof" | Out-File $tempPath\DscEngineCache.txt                        
+            if (Test-Path "$env:windir\system32\configuration\DscEngineCache.mof")
+            {
+              Get-Content "$env:windir\system32\configuration\DscEngineCache.mof" | Out-File $tempPath\DscEngineCache.txt                        
+            }
 
         } -argumentlist @($tempPath)
 
@@ -423,13 +427,15 @@ Are you sure you want to continue
 
         if (Test-PullServerPresent)
         {
-            Write-Verbose "This machine has been set up as DSC Pull Server"
+            Write-Verbose 'This machine has been set up as DSC Pull Server'
             Write-ProgressMessage -Status 'Getting DSC Pull Server Event log ...' -PercentComplete 25
-            Export-EventLog -Name Microsoft-Windows-PowerShell-DesiredStateConfiguration-PullServer/Operational -path $tempPath @invokeCommandParams            
+            Export-EventLog -Name Microsoft-Windows-PowerShell-DesiredStateConfiguration-PullServer/Operational -path $tempPath @invokeCommandParams
+            Write-ProgressMessage -Status 'Getting Management OData log ...' -PercentComplete 25
+            Export-EventLog -Name Microsoft-Windows-ManagementOdataService/Operational -path $tempPath @invokeCommandParams
         }
         else
         {
-            Write-Verbose "This machine has not been set up as a DSC Pull Server"
+            Write-Verbose 'This machine has not been set up as a DSC Pull Server'
         }        
         
         
