@@ -161,6 +161,7 @@ try
                 Mock Start-Process -MockWith {}
                 mock Export-EventLog -MockWith {}
                 mock Test-PullServerPresent -MockWith {$true}
+                mock Test-Path -MockWith {$true}
                 
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
