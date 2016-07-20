@@ -410,7 +410,10 @@ Are you sure you want to continue
                 Get-DscConfigurationStatus -All | out-string  | Out-File   $tempPath\get-dscconfigurationstatus.txt
             }
 
-            Get-Content "$env:windir\system32\configuration\DscEngineCache.mof" | Out-File $tempPath\DscEngineCache.txt                        
+            if (Test-Path "$env:windir\system32\configuration\DscEngineCache.mof")
+            {
+              Get-Content "$env:windir\system32\configuration\DscEngineCache.mof" | Out-File $tempPath\DscEngineCache.txt                        
+            }
 
         } -argumentlist @($tempPath)
 
