@@ -1,4 +1,4 @@
-﻿[![Build status](https://ci.appveyor.com/api/projects/status/p2vv1iwqcks4sk8m/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xdscdiagnostics/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/p2vv1iwqcks4sk8m/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xdscdiagnostics/branch/master)
 
 # xDscDiagnostics
 
@@ -84,6 +84,8 @@ The cmdlet will confirm by default.
 ## Versions
 
 ### Unreleased
+
+### 2.4.0.0
 * Added collection of OData logs to New-xDscDiagnosticsZip
 * Converted appveyor.yml to install Pester from PSGallery instead of from Chocolatey.
 
@@ -231,7 +233,7 @@ Unprotect-xDscConfigurtion -Stage Previous
 Example output
 
 ```
-﻿/*
+?/*
 @TargetNode='localhost'
 @GeneratedBy=tplunk
 @GenerationDate=04/07/2016 16:54:16
