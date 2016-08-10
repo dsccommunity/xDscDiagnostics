@@ -84,6 +84,7 @@ The cmdlet will confirm by default.
 ## Versions
 
 ### Unreleased
+* Added collection of OData logs to New-xDscDiagnosticsZip
 * Converted appveyor.yml to install Pester from PSGallery instead of from Chocolatey.
 
 ### 2.3.0.0
