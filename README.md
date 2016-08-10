@@ -4,6 +4,9 @@
 
 The **xDscDiagnostics** module contains two cmdlets for analyzing DSC event logs and identifying the causes of any failure in a DSC operation: **Get-xDscOperation** and **Trace-xDscOperation**.
 
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
 ## Contributing
 Please check out common DSC Resources [contributing guidelines](https://github.com/PowerShell/DscResource.Kit/blob/master/CONTRIBUTING.md).
 
@@ -81,6 +84,10 @@ The cmdlet will confirm by default.
 ## Versions
 
 ### Unreleased
+
+### 2.4.0.0
+* Added collection of OData logs to New-xDscDiagnosticsZip
+* Converted appveyor.yml to install Pester from PSGallery instead of from Chocolatey.
 
 ### 2.3.0.0
 
@@ -226,7 +233,7 @@ Unprotect-xDscConfigurtion -Stage Previous
 Example output
 
 ```
-﻿/*
+?/*
 @TargetNode='localhost'
 @GeneratedBy=tplunk
 @GenerationDate=04/07/2016 16:54:16
