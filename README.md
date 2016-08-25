@@ -80,6 +80,12 @@ This cmdlet generates a zip of DSC and DSC Extension diagnostics to send to supp
 The output will be the name of the zip file.
 The cmdlet will confirm by default.
 * **Session**: This is an optional parameter of a PSSession to use to collect the diagnostics
+
+### Get-xDscDiagnosticsZipDataPoint
+This cmdlet returns the list a zip data point.  A data point has the following properties
+* **Name**: A unique name for the data point.
+* **Description**: A description of the data point.
+* **Target**: The general area of diagnostics the datapoint targets.
 			
 ## Versions
 

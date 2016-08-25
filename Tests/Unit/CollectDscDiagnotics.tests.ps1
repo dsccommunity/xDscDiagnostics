@@ -114,6 +114,12 @@ try
 
         #region Function Get-xDscDiagnosticsZip
         Describe "$($Global:ModuleName)\New-xDscDiagnosticsZip" {
+            Context "invalid calls" {
+                it "should throw" {
+                    {$dataPoints = Get-xDscDiagnosticsZip -includedDataPoint @('test','test2')} | should throw 'Cannot validate argument on parameter ''includedDataPoint''. IncluedDataPoint must be an array of xDscDiagnostics datapoint objects.'
+                }
+                
+            }
             $testFolder = 'testdrive:\GetxDscDiagnosticsZip'
             md $testFolder > $null
             $Global:GetxDscDiagnosticsZipPath = (Resolve-Path $testFolder)
@@ -134,6 +140,24 @@ try
                     Assert-MockCalled -CommandName Collect-DataPoint -Times 10
                 }
             }
+
+            Context 'verify with high level mock with eventlog datapoints' {
+                
+            
+                Mock Invoke-Command -MockWith {return $Global:GetxDscDiagnosticsZipPath}
+                Mock Get-FolderAsZip -MockWith { Write-Verbose "executing Get-FolderAsZip mock"}
+                Mock Collect-DataPoint -MockWith {return $true}
+                Mock Start-Process -MockWith { Write-Verbose "executing start-process mock"}
+                
+                it 'should collect data and zip the data' {
+                    New-xDscDiagnosticsZip -confirm:$false -includedDataPoint (@(Get-xDscDiagnosticsZipDataPoint).where{$_.name -like '*eventlog'})
+                    Assert-MockCalled -CommandName Invoke-Command -Times 2
+                    Assert-MockCalled -CommandName Get-FolderAsZip -Times 1
+                    Assert-MockCalled -CommandName Start-Process -Times 1
+                    Assert-MockCalled -CommandName Collect-DataPoint -Times 5
+                }
+            }
+
             context 'verify with lower level mocks' {
                 $testPackageFolder = 'testdrive:\package'
                 md $testPackageFolder > $null
@@ -167,7 +191,7 @@ try
                 mock Export-EventLog -MockWith {}
                 mock Test-PullServerPresent -MockWith {$true}       
                 Mock Collect-DataPoint -MockWith {return $true} -ParameterFilter {$Name -eq 'IISLogs'}
-         
+        
                 
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
@@ -274,6 +298,10 @@ try
                     it "should have a target"{
                         $dataPoint.Target |  should not benullorempty
                     }
+                    it "should be of type 'xDscDiagnostics.DataPoint'"{
+                        $dataPoint.pstypenames[0] |  should be 'xDscDiagnostics.DataPoint'
+                    }
+
                     it "should have 2 NoteProperties"{
                         @($dataPoint | get-member -MemberType NoteProperty).count | should be 3
                     }
@@ -286,7 +314,6 @@ try
                     }
                 }
             }
-
         }
 
         # TODO: Pester Tests for any Helper Cmdlets

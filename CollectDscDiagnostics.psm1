@@ -465,7 +465,7 @@ generated files.
     } # end data point
 }
 
-
+$datapointTypeName = 'xDscDiagnostics.DataPoint'
 # Returns a list of datapoints which will be collected by
 # New-xDscDiagnosticsZip 
 function Get-xDscDiagnosticsZipDataPoint
@@ -473,11 +473,14 @@ function Get-xDscDiagnosticsZipDataPoint
     foreach($key in $dataPoints.Keys)
     {
         $dataPoint = $dataPoints.$key
-        Write-Output ([PSCustomObject] @{
+        $dataPointObj = ([PSCustomObject] @{
             Name = $key
             Description = $dataPoint.Description
             Target = $dataPoint.Target
         })
+        $dataPointObj.pstypenames.Clear()
+        $dataPointObj.pstypenames.Add($datapointTypeName)
+        Write-Output $dataPointObj
     }
 }
 
@@ -551,6 +554,7 @@ function New-xDscDiagnosticsZip
 
         [Parameter(ParameterSetName='includedDataPoints', Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
+        [ValidateScript({ foreach($point in $_) { if($_.pstypenames -notcontains $datapointTypeName){ throw 'IncluedDataPoint must be an array of xDscDiagnostics datapoint objects.'}} ; return $true })]
         [object[]] $includedDataPoint
     )
     DynamicParam {
