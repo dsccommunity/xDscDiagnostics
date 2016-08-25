@@ -114,6 +114,12 @@ try
 
         #region Function Get-xDscDiagnosticsZip
         Describe "$($Global:ModuleName)\New-xDscDiagnosticsZip" {
+            Context "invalid calls" {
+                it "should throw" {
+                    {$dataPoints = Get-xDscDiagnosticsZip -includedDataPoint @('test','test2')} | should throw 'Cannot validate argument on parameter ''includedDataPoint''. IncluedDataPoint must be an array of xDscDiagnostics datapoint objects.'
+                }
+                
+            }
             $testFolder = 'testdrive:\GetxDscDiagnosticsZip'
             md $testFolder > $null
             $Global:GetxDscDiagnosticsZipPath = (Resolve-Path $testFolder)
@@ -121,17 +127,37 @@ try
             Context 'verify with high level mock' {
                 
             
-                Mock Invoke-Command -MockWith { return $Global:GetxDscDiagnosticsZipPath}
-                Mock Get-FolderAsZip -MockWith {}
-                Mock Start-Process -MockWith {}
+                Mock Invoke-Command -MockWith {return $Global:GetxDscDiagnosticsZipPath}
+                Mock Get-FolderAsZip -MockWith { Write-Verbose "executing Get-FolderAsZip mock"}
+                Mock Collect-DataPoint -MockWith {return $true}
+                Mock Start-Process -MockWith { Write-Verbose "executing start-process mock"}
                 
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
                     Assert-MockCalled -CommandName Invoke-Command -Times 2
                     Assert-MockCalled -CommandName Get-FolderAsZip -Times 1
                     Assert-MockCalled -CommandName Start-Process -Times 1
+                    Assert-MockCalled -CommandName Collect-DataPoint -Times 10
                 }
             }
+
+            Context 'verify with high level mock with eventlog datapoints' {
+                
+            
+                Mock Invoke-Command -MockWith {return $Global:GetxDscDiagnosticsZipPath}
+                Mock Get-FolderAsZip -MockWith { Write-Verbose "executing Get-FolderAsZip mock"}
+                Mock Collect-DataPoint -MockWith {return $true}
+                Mock Start-Process -MockWith { Write-Verbose "executing start-process mock"}
+                
+                it 'should collect data and zip the data' {
+                    New-xDscDiagnosticsZip -confirm:$false -includedDataPoint (@(Get-xDscDiagnosticsZipDataPoint).where{$_.name -like '*eventlog'})
+                    Assert-MockCalled -CommandName Invoke-Command -Times 2
+                    Assert-MockCalled -CommandName Get-FolderAsZip -Times 1
+                    Assert-MockCalled -CommandName Start-Process -Times 1
+                    Assert-MockCalled -CommandName Collect-DataPoint -Times 5
+                }
+            }
+
             context 'verify with lower level mocks' {
                 $testPackageFolder = 'testdrive:\package'
                 md $testPackageFolder > $null
@@ -163,7 +189,9 @@ try
                 Mock Get-FolderAsZip -MockWith {}
                 Mock Start-Process -MockWith {}
                 mock Export-EventLog -MockWith {}
-                mock Test-PullServerPresent -MockWith {$true}                
+                mock Test-PullServerPresent -MockWith {$true}       
+                Mock Collect-DataPoint -MockWith {return $true} -ParameterFilter {$Name -eq 'IISLogs'}
+        
                 
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
@@ -174,12 +202,13 @@ try
                     Assert-MockCalled -CommandName Get-DscLocalConfigurationManager -Times 1 -Exactly
                     Assert-MockCalled -CommandName Get-CimInstance -Times 1 -Exactly
                     Assert-MockCalled -CommandName Get-DSCResource -Times 1 -Exactly
-                    Assert-MockCalled -CommandName Get-Content -Times 1 -Exactly
+                    Assert-MockCalled -CommandName Get-Content -Times -0 -Exactly
+                    Assert-MockCalled -CommandName Collect-DataPoint -Times 0 -Exactly
                     if($statusCommand)
                     { 
                         Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
                     }
-                    Assert-MockCalled -CommandName Export-EventLog -Times 5 -Exactly
+                    Assert-MockCalled -CommandName Export-EventLog -Times 3 -Exactly
                 }
             }
 
@@ -242,11 +271,50 @@ try
                 $invalidStatus = [PSCustomObject] @{JobId = 'id'; Type = 'type'}
                 
                 it 'should throw cannot process argument' {
-                    {Get-XDscConfigurationDetail -verbose -ConfigurationStatus $invalidStatus}| should throw 'Cannot process argument transformation on parameter 'ConfigurationStatus'. Cannot convert the "@{JobId=id; Type=type}" value of type "System.Management.Automation.PSCustomObject" to type "Microsoft.Management.Infrastructure.CimInstance".'
+                    {Get-XDscConfigurationDetail -verbose -ConfigurationStatus $invalidStatus}| should throw 'Cannot validate argument on parameter 'ConfigurationStatus'. Must be a configuration status object".'
                 }
             }
         }
 
+        Describe "$($Global:ModuleName)\Get-xDscDiagnosticsZipDataPoint" {
+            it "should not throw" {
+                {$dataPoints = Get-xDscDiagnosticsZipDataPoint} | should not throw
+            }
+
+            $dataPoints = @(Get-xDscDiagnosticsZipDataPoint)
+
+            it "should return 16 points" {
+                $dataPoints.Count | should be 16
+            }
+
+            foreach($dataPoint in $dataPoints) {
+                Context "DataPoint $($dataPoint.Name)" { 
+                    it "should have name" {
+                        $dataPoint.Name | should not benullorempty
+                    }
+                    it "should have description "{
+                        $dataPoint.Description |  should not benullorempty
+                    }
+                    it "should have a target"{
+                        $dataPoint.Target |  should not benullorempty
+                    }
+                    it "should be of type 'xDscDiagnostics.DataPoint'"{
+                        $dataPoint.pstypenames[0] |  should be 'xDscDiagnostics.DataPoint'
+                    }
+
+                    it "should have 2 NoteProperties"{
+                        @($dataPoint | get-member -MemberType NoteProperty).count | should be 3
+                    }
+                    it "should have 4 Methods"{
+                        # Methods, Equals, GetHashCode, GetType, ToString
+                        @($dataPoint | get-member -MemberType Method).count | should be 4
+                    }
+                    it "should have no other members"{
+                        @($dataPoint | get-member).count | should be 7
+                    }
+                }
+            }
+        }
 
         # TODO: Pester Tests for any Helper Cmdlets
 
