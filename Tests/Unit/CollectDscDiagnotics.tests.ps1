@@ -247,7 +247,7 @@ try
                 $invalidStatus = [PSCustomObject] @{JobId = 'id'; Type = 'type'}
                 
                 it 'should throw cannot process argument' {
-                    {Get-XDscConfigurationDetail -verbose -ConfigurationStatus $invalidStatus}| should throw 'Cannot process argument transformation on parameter 'ConfigurationStatus'. Cannot convert the "@{JobId=id; Type=type}" value of type "System.Management.Automation.PSCustomObject" to type "Microsoft.Management.Infrastructure.CimInstance".'
+                    {Get-XDscConfigurationDetail -verbose -ConfigurationStatus $invalidStatus}| should throw 'Cannot validate argument on parameter 'ConfigurationStatus'. Must be a configuration status object".'
                 }
             }
         }
