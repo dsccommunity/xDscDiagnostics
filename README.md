@@ -84,6 +84,9 @@ The cmdlet will confirm by default.
 ## Versions
 
 ### Unreleased
+* Added ability for New-xDscDiagnosticsZip to only collect the `xDscDiagnosticsZipDataPoint` collection you specify by data point or by group (called target).
+* Added Get-xDscDiagnosticsZipDataPoint
+* Added ability for New-xDscDiagnosticsZip to collect IIS and HTTPErr logs
 
 ### 2.4.0.0
 * Added collection of OData logs to New-xDscDiagnosticsZip
@@ -179,6 +182,24 @@ Update-xDscEventLogStatus -Channel Analytic -Status Enabled
 * Run: 
 ```PowerShell
 New-xDscDiagnosticsZip
+```
+* Email the Zip that pops up to your support contact
+
+### Gather diagnostics for the DSC Pull Server and Windows data points.
+* [Install the Module](#install-the-module) 
+* Open an elevated PowerShell Windows
+* Run: 
+```PowerShell
+Get-xDscDiagnosticsZip -DataPointTarget 'DSC Pull Server','Windows'
+```
+* Email the Zip that pops up to your support contact
+
+### Gather diagnostics for only eventlog datapoints
+* [Install the Module](#install-the-module) 
+* Open an elevated PowerShell Windows
+* Run: 
+```PowerShell
+Get-xDscDiagnosticsZip -includedDataPoint (@(Get-xDscDiagnosticsZipDataPoint).where{$_.name -like '*eventlog'})
 ```
 * Email the Zip that pops up to your support contact
 

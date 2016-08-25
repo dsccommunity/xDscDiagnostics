@@ -121,15 +121,17 @@ try
             Context 'verify with high level mock' {
                 
             
-                Mock Invoke-Command -MockWith { return $Global:GetxDscDiagnosticsZipPath}
-                Mock Get-FolderAsZip -MockWith {}
-                Mock Start-Process -MockWith {}
+                Mock Invoke-Command -MockWith {return $Global:GetxDscDiagnosticsZipPath}
+                Mock Get-FolderAsZip -MockWith { Write-Verbose "executing Get-FolderAsZip mock"}
+                Mock Collect-DataPoint -MockWith {return $true}
+                Mock Start-Process -MockWith { Write-Verbose "executing start-process mock"}
                 
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
                     Assert-MockCalled -CommandName Invoke-Command -Times 2
                     Assert-MockCalled -CommandName Get-FolderAsZip -Times 1
                     Assert-MockCalled -CommandName Start-Process -Times 1
+                    Assert-MockCalled -CommandName Collect-DataPoint -Times 10
                 }
             }
             context 'verify with lower level mocks' {
@@ -163,7 +165,9 @@ try
                 Mock Get-FolderAsZip -MockWith {}
                 Mock Start-Process -MockWith {}
                 mock Export-EventLog -MockWith {}
-                mock Test-PullServerPresent -MockWith {$true}                
+                mock Test-PullServerPresent -MockWith {$true}       
+                Mock Collect-DataPoint -MockWith {return $true} -ParameterFilter {$Name -eq 'IISLogs'}
+         
                 
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
@@ -174,12 +178,13 @@ try
                     Assert-MockCalled -CommandName Get-DscLocalConfigurationManager -Times 1 -Exactly
                     Assert-MockCalled -CommandName Get-CimInstance -Times 1 -Exactly
                     Assert-MockCalled -CommandName Get-DSCResource -Times 1 -Exactly
-                    Assert-MockCalled -CommandName Get-Content -Times 1 -Exactly
+                    Assert-MockCalled -CommandName Get-Content -Times -0 -Exactly
+                    Assert-MockCalled -CommandName Collect-DataPoint -Times 0 -Exactly
                     if($statusCommand)
                     { 
                         Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
                     }
-                    Assert-MockCalled -CommandName Export-EventLog -Times 5 -Exactly
+                    Assert-MockCalled -CommandName Export-EventLog -Times 3 -Exactly
                 }
             }
 
@@ -247,6 +252,42 @@ try
             }
         }
 
+        Describe "$($Global:ModuleName)\Get-xDscDiagnosticsZipDataPoint" {
+            it "should not throw" {
+                {$dataPoints = Get-xDscDiagnosticsZipDataPoint} | should not throw
+            }
+
+            $dataPoints = @(Get-xDscDiagnosticsZipDataPoint)
+
+            it "should return 16 points" {
+                $dataPoints.Count | should be 16
+            }
+
+            foreach($dataPoint in $dataPoints) {
+                Context "DataPoint $($dataPoint.Name)" { 
+                    it "should have name" {
+                        $dataPoint.Name | should not benullorempty
+                    }
+                    it "should have description "{
+                        $dataPoint.Description |  should not benullorempty
+                    }
+                    it "should have a target"{
+                        $dataPoint.Target |  should not benullorempty
+                    }
+                    it "should have 2 NoteProperties"{
+                        @($dataPoint | get-member -MemberType NoteProperty).count | should be 3
+                    }
+                    it "should have 4 Methods"{
+                        # Methods, Equals, GetHashCode, GetType, ToString
+                        @($dataPoint | get-member -MemberType Method).count | should be 4
+                    }
+                    it "should have no other members"{
+                        @($dataPoint | get-member).count | should be 7
+                    }
+                }
+            }
+
+        }
 
         # TODO: Pester Tests for any Helper Cmdlets
 
