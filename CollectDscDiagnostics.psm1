@@ -275,88 +275,36 @@ function Test-PullServerPresent
         }        
     }    
 
+    Write-Verbose "This is not a pull server"
     return $isPullServerPresent
 }
 
-#
-# Gathers diagnostics for DSC and the DSC Extension into a zipfile 
-# if specified, in the specified path
-# if specified, in the specified filename
-# on the specified session, if the session is not specified
-# a session to the local machine will be used
-#
-function New-xDscDiagnosticsZip
-{
-    [CmdletBinding(    SupportsShouldProcess=$true,        ConfirmImpact='High'    )]
-    param(        
-        [System.Management.Automation.Runspaces.PSSession] $Session,
-        [string] $destinationPath,
-        [string] $filename
-    )
 
-    $local = $false
-    $invokeCommandParams = @{}
-    if($Session)
-    {
-        $invokeCommandParams.Add('Session',$Session);
-    }
-    else
-    {
-        $local = $true
-    }
-    
-    Function Write-ProgressMessage
-    {
-        [CmdletBinding()]
-        param([string]$Status, [int]$PercentComplete, [switch]$Completed)
-
-        Write-Progress -Activity 'Get-AzureVmDscDiagnostics' @PSBoundParameters
-        Write-Verbose -message $status 
-    }
-
-
-$privacyConfirmation = @"
-Collecting the following information, which may contain private/sensative details including:  
-    1.   Logs from the Azure VM Agent, including all extensions
-    2.   The state of the Azure DSC Extension, 
-       including their configuration, configuration data (but not any decryption keys)
-       and included or generated files.
-    3. The DSC, System and application event logs.
-    4. The WindowsUpdate, CBS and DISM logs
-    5. The output of Get-Hotfix
-    6. The output of Get-DscLocalConfigurationManager
-    7. The PsVersionTable
-    8. The OS Version
-    9. The output of Get-DscConfigurationStatus -all
-    10. The local machine cert thumbprints.
-    11. The name, version and path to installed dsc resources.
-    12. The contents of the DscEngineCache.mof file
-    13. DSC Pull Server logs (if this machine has been set up as a DSC Pull Server)
-    14. Management OData logs (if this machine has been set up as a DSC Pull Server)
-
-This tool is provided for your convience, to ensure all data is collected as quickly as possible.  
-
-Are you sure you want to continue
-"@
-    if ($pscmdlet.ShouldProcess($privacyConfirmation)) 
-    {
-        
-        $tempPath = invoke-command -ErrorAction:Continue @invokeCommandParams -script {
-                $ErrorActionPreference = 'stop'
-                Set-StrictMode -Version latest
-                $tempPath = Join-path $env:temp ([system.io.path]::GetRandomFileName())
-                if(!(Test-Path $tempPath))
-                {
-                    mkdir $tempPath > $null
-                    mkdir $tempPath\CBS > $null
-                    mkdir $tempPath\DISM > $null
-                }
-                return $tempPath
-            }
-        Write-Debug -message "tempPath: $tempPath" -verbose
-
-        Write-ProgressMessage  -Status 'Finding DSC and copying Extension ...' -PercentComplete 0
-        invoke-command -ErrorAction:Continue @invokeCommandParams -script {
+$AzureDscExtensionTargetName = 'Azure DSC Extension'
+$DscTargetName = 'DSC Node'
+$WindowsTargetName = 'Windows'
+$DscPullServerTargetName = 'DSC Pull Server'
+$validTargets = @($AzureDscExtensionTargetName,$DscTargetName,$WindowsTargetName,$DscPullServerTargetName)
+$defaultTargets = @($AzureDscExtensionTargetName,$DscTargetName,$WindowsTargetName)
+$dataPoints = @{
+    AzureVmAgentLogs = @{
+        Description = 'Logs from the Azure VM Agent, including all extensions'
+        Target = $AzureDscExtensionTargetName
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
+            Copy-Item -Recurse C:\WindowsAzure\Logs $tempPath\WindowsAzureLogs -ErrorAction SilentlyContinue
+        }
+    } # end data point
+    DSCExtension = @{
+        Description = @'
+The state of the Azure DSC Extension, including the configuration(s), 
+configuration data (but not any decryption keys), and included or 
+generated files.
+'@
+        Target = $AzureDscExtensionTargetName
+        ScriptBlock = {
             param($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
@@ -384,100 +332,390 @@ Are you sure you want to continue
             { 
                 Write-Verbose -message 'Did not find DSC extension.' -verbose
             }
-        } -argumentlist @($tempPath)
-
-        Write-ProgressMessage  -Status 'Copying log files..' -PercentComplete 1
-        invoke-command -ErrorAction:Continue @invokeCommandParams -script {
+        }
+    } # end data point
+    DscEventLog = @{
+        Description = 'The DSC event log.'
+        EventLog = 'Microsoft-Windows-DSC/Operational'
+        Target = $DscTargetName
+    } # end data point
+    ApplicationEventLog = @{
+        Description = 'The Application event log.'
+        EventLog = 'Application'
+        Target = $WindowsTargetName
+    } # end data point
+    SystemEventLog = @{
+        Description = 'The System event log.'
+        EventLog = 'System'
+        Target = $WindowsTargetName
+    } # end data point
+    PullServerEventLog = @{
+        Description = 'The DSC Pull Server event log.'
+        EventLog = 'Microsoft-Windows-PowerShell-DesiredStateConfiguration-PullServer/Operational'
+        Target = $DscPullServerTargetName
+    } # end data point
+    ODataEventLog = @{
+        Description = 'The Management OData event log (used by the DSC Pull Server).'
+        EventLog = 'Microsoft-Windows-ManagementOdataService/Operational'
+        Target = $DscPullServerTargetName
+    } # end data point
+    HttpErrLogs = @{
+        Description = 'The HTTPERR logs.'
+        ScriptBlock = {
             param($tempPath)    
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
-            Copy-Item -Recurse C:\WindowsAzure\Logs $tempPath\WindowsAzureLogs -ErrorAction SilentlyContinue
+            mkdir $tempPath\HttpErr > $null
+            Copy-Item $env:windir\System32\LogFiles\HttpErr\*.* $tempPath\HttpErr -ErrorAction SilentlyContinue
+        }
+        Target = $DscPullServerTargetName
+    } # end data point
+    IISLogs = @{
+        Description = 'The IIS logs.'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
+            Import-Module WebAdministration
+            $logFolder = (Get-WebConfigurationProperty "/system.applicationHost/sites/siteDefaults" -name logfile.directory).Value
+            mkdir $tempPath\Inetlogs > $null
+            Copy-Item (Join-Path $logFolder *.*) $tempPath\Inetlogs -ErrorAction SilentlyContinue
+        }
+        Target = $DscPullServerTargetName
+    } # end data point
+    ServicingLogs = @{
+        Description = 'The Windows Servicing logs, including, WindowsUpdate, CBS and DISM logs.'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
+            mkdir $tempPath\CBS > $null
+            mkdir $tempPath\DISM > $null
             Copy-Item $env:windir\WindowsUpdate.log $tempPath\WindowsUpdate.log -ErrorAction SilentlyContinue
             Copy-Item $env:windir\logs\CBS\*.* $tempPath\CBS -ErrorAction SilentlyContinue
             Copy-Item $env:windir\logs\DISM\*.* $tempPath\DISM -ErrorAction SilentlyContinue
+        }
+        Target = $WindowsTargetName
+    } # end data point
+    HotfixList = @{
+        Description = 'The output of Get-Hotfix'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
             Get-HotFix | Out-String | Out-File  $tempPath\HotFixIds.txt
+        }
+        Target = $WindowsTargetName
+    } # end data point
+    GetLcmOutput = @{
+        Description = 'The output of Get-DscLocalConfigurationManager'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
             $dscLcm = Get-DscLocalConfigurationManager
             $dscLcm | Out-String | Out-File   $tempPath\Get-dsclcm.txt
             $dscLcm | ConvertTo-Json -Depth 10 | Out-File   $tempPath\Get-dsclcm.json
+        }
+        Target = $DscTargetName
+    } # end data point
+    VersionInformation = @{
+        Description = 'The PsVersionTable and OS version information'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
             $PSVersionTable | Out-String | Out-File   $tempPath\psVersionTable.txt
             Get-CimInstance win32_operatingSystem | select version | out-string  | Out-File   $tempPath\osVersion.txt
+        }
+        Target = $WindowsTargetName
+    } # end data point
+    CertThumbprints = @{
+        Description = 'The local machine cert thumbprints.'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
             dir Cert:\LocalMachine\My\ |select -ExpandProperty Thumbprint | out-string | out-file $tempPath\LocalMachineCertThumbprints.txt
-            Get-DscResource 2>$null | select name, version, path | out-string | out-file $tempPath\ResourceInfo.txt 
-            
+        }
+        Target = $WindowsTargetName
+    } # end data point
+    DscResourceInventory = @{
+        Description = 'The name, version and path to installed dsc resources.'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
+            Get-DscResource 2> $tempPath\ResourceErrors.txt | select name, version, path | out-string | out-file $tempPath\ResourceInfo.txt 
+        }
+        Target = $DscTargetName
+    } # end data point
+    DscConfigurationStatus = @{
+        Description = 'The output of Get-DscConfigurationStatus -all'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
             $statusCommand = get-Command -name Get-DscConfigurationStatus -ErrorAction SilentlyContinue
             if($statusCommand)
             { 
                 Get-DscConfigurationStatus -All | out-string  | Out-File   $tempPath\get-dscconfigurationstatus.txt
-            }
+            }        }
+        Target = $DscTargetName
+    } # end data point
+}
 
-            if (Test-Path "$env:windir\system32\configuration\DscEngineCache.mof")
-            {
-              Get-Content "$env:windir\system32\configuration\DscEngineCache.mof" | Out-File $tempPath\DscEngineCache.txt                        
-            }
+$datapointTypeName = 'xDscDiagnostics.DataPoint'
+# Returns a list of datapoints which will be collected by
+# New-xDscDiagnosticsZip 
+function Get-xDscDiagnosticsZipDataPoint
+{
+    foreach($key in $dataPoints.Keys)
+    {
+        $dataPoint = $dataPoints.$key
+        $dataPointObj = ([PSCustomObject] @{
+            Name = $key
+            Description = $dataPoint.Description
+            Target = $dataPoint.Target
+        })
+        $dataPointObj.pstypenames.Clear()
+        $dataPointObj.pstypenames.Add($datapointTypeName)
+        Write-Output $dataPointObj
+    }
+}
 
-        } -argumentlist @($tempPath)
+# attempts to Collect a datapoint 
+# Returns $true if it believes it collected the datapoint
+function Collect-DataPoint
+{
+    param (
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [String] $Name,
 
-        Write-ProgressMessage -Status 'Getting DSC Event log ...' -PercentComplete 25
-        Export-EventLog -Name Microsoft-Windows-DSC/Operational -Path $tempPath @invokeCommandParams
-        Write-ProgressMessage  -Status 'Getting Application Event log ...' -PercentComplete 50
-        Export-EventLog -Name Application -Path $tempPath @invokeCommandParams
-        Write-ProgressMessage  -Status 'Getting System Event log ...' -PercentComplete 65
-        Export-EventLog -Name System -Path $tempPath @invokeCommandParams
+        [Parameter(Mandatory = $true)]
+        [ValidateNotNull()]
+        [HashTable] $dataPoint,
+        
+        [Parameter(Mandatory = $true)]
+        [HashTable] $invokeCommandParams
+    )
 
+    $collected = $false
+    if($dataPoint.ScriptBlock)
+    {
+        Write-Verbose -Message "Collecting '$name-$($dataPoint.Description)' using ScripBlock ..."
+        Invoke-Command -ErrorAction:Continue @invokeCommandParams -script $dataPoint.ScriptBlock -argumentlist @($tempPath)
+        $collected = $true
+    }
 
-        if (Test-PullServerPresent)
+    if($dataPoint.EventLog)
+    {
+        Write-Verbose -Message "Collecting '$name-$($dataPoint.Description)' using Eventlog ..."
+        try 
         {
-            Write-Verbose 'This machine has been set up as DSC Pull Server'
-            Write-ProgressMessage -Status 'Getting DSC Pull Server Event log ...' -PercentComplete 25
-            Export-EventLog -Name Microsoft-Windows-PowerShell-DesiredStateConfiguration-PullServer/Operational -path $tempPath @invokeCommandParams
-            Write-ProgressMessage -Status 'Getting Management OData log ...' -PercentComplete 25
-            Export-EventLog -Name Microsoft-Windows-ManagementOdataService/Operational -path $tempPath @invokeCommandParams
+            Export-EventLog -Name $dataPoint.EventLog -Path $tempPath @invokeCommandParams
+        }
+        catch
+        {
+            Write-Warning "Collecting '$name-$($dataPoint.Description)' failed with the following error:$([System.Environment]::NewLine)$_"
+        } 
+
+        $collected = $true
+    }
+    return $collected
+}
+
+#
+# Gathers diagnostics for DSC and the DSC Extension into a zipfile 
+# if specified, in the specified path
+# if specified, in the specified filename
+# on the specified session, if the session is not specified
+# a session to the local machine will be used
+#
+function New-xDscDiagnosticsZip
+{
+    [CmdletBinding(    SupportsShouldProcess=$true,        ConfirmImpact='High', DefaultParameterSetName='default'    )]
+    param(
+        [Parameter(ParameterSetName='default')]        
+        [Parameter(ParameterSetName='includedDataPoints')]
+        [Parameter(ParameterSetName='includedTargets')]
+        [System.Management.Automation.Runspaces.PSSession] $Session,
+
+        [Parameter(ParameterSetName='default')]
+        [Parameter(ParameterSetName='includedDataPoints')]
+        [Parameter(ParameterSetName='includedTargets')]
+        [string] $destinationPath,
+
+        [Parameter(ParameterSetName='default')]
+        [Parameter(ParameterSetName='includedDataPoints')]
+        [Parameter(ParameterSetName='includedTargets')]
+        [string] $filename,
+
+        [Parameter(ParameterSetName='includedDataPoints', Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({ foreach($point in $_) { if($_.pstypenames -notcontains $datapointTypeName){ throw 'IncluedDataPoint must be an array of xDscDiagnostics datapoint objects.'}} ; return $true })]
+        [object[]] $includedDataPoint
+    )
+    DynamicParam {
+        $attributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
+
+        $dataPointTargetsParametereAttribute = [System.Management.Automation.ParameterAttribute]::new()
+        $dataPointTargetsParametereAttribute.Mandatory = $true
+        $dataPointTargetsParametereAttribute.ParameterSetName = 'includedTargets'
+        $attributeCollection.Add($dataPointTargetsParametereAttribute)
+
+        $validateSetAttribute = [System.Management.Automation.ValidateSetAttribute]::new([string[]]$validTargets)
+
+        $attributeCollection.Add($validateSetAttribute)
+        $dataPointTargetsParam = New-Object System.Management.Automation.RuntimeDefinedParameter('DataPointTarget', [String[]], $attributeCollection)
+
+        $paramDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::new()
+        $paramDictionary.Add('DataPointTarget', $dataPointTargetsParam)
+        return $paramDictionary
+    }
+
+    Process {
+        [string[]] $dataPointTarget = $PSBoundParameters.DataPointTarget
+        $dataPointsToCollect = @{}
+        switch($pscmdlet.ParameterSetName)
+        {
+            "includedDataPoints" {
+                foreach($dataPoint in $includedDataPoint)
+                {
+                    $dataPointsToCollect.Add($dataPoint.Name, $dataPoints.($dataPoint.Name))
+                }                
+            }
+            "includedTargets" {
+                foreach($key in $dataPoints.keys)
+                {
+                    $dataPoint = $dataPoints.$key
+                    if($dataPointTarget -icontains $dataPoint.Target)
+                    {
+                        $dataPointsToCollect.Add($key, $dataPoint)
+                    }
+                }                
+            }
+            default {
+                foreach($key in $dataPoints.keys)
+                {
+                    $dataPoint = $dataPoints.$key
+                    if($defaultTargets -icontains $dataPoint.Target)
+                    {
+                        $dataPointsToCollect.Add($key, $dataPoint)
+                    }
+                }                
+            }
+        }
+
+        $local = $false
+        $invokeCommandParams = @{}
+        if($Session)
+        {
+            $invokeCommandParams.Add('Session',$Session);
         }
         else
         {
-            Write-Verbose 'This machine has not been set up as a DSC Pull Server'
-        }        
+            $local = $true
+        }
         
-        
-        if(!$destinationPath)
+        Function Write-ProgressMessage
         {
-            Write-ProgressMessage  -Status 'Getting destinationPath ...' -PercentComplete 74
-            $destinationPath = invoke-command -ErrorAction:Continue @invokeCommandParams -script { 
-                $ErrorActionPreference = 'stop'
-                Set-StrictMode -Version latest
-                Join-path $env:temp ([system.io.path]::GetRandomFileName()) 
-            }
+            [CmdletBinding()]
+            param([string]$Status, [int]$PercentComplete, [switch]$Completed)
+
+            Write-Progress -Activity 'Get-AzureVmDscDiagnostics' @PSBoundParameters
+            Write-Verbose -message $status 
         }
 
-        Write-Debug -message "destinationPath: $destinationPath" -verbose
-        $zipParams = @{ 
-                sourceFolder = $tempPath
-                destinationPath = $destinationPath
-                Session = $session
-                fileName = $fileName
-            }
 
-        Write-ProgressMessage  -Status 'Zipping files ...' -PercentComplete 75
-        if($local)
+    $privacyConfirmation = "Collecting the following information, which may contain private/sensative details including:"
+        foreach($key in $dataPointsToCollect.Keys)
         {
-            $zip = Get-FolderAsZip @zipParams
-            $zipPath = $zip
+            $dataPoint = $dataPointsToCollect.$key
+            $privacyConfirmation += [System.Environment]::NewLine
+            $privacyConfirmation += ("`t{0}" -f $dataPoint.Description)
         }
-        else 
+        $privacyConfirmation += [System.Environment]::NewLine
+        $privacyConfirmation += "This tool is provided for your convience, to ensure all data is collected as quickly as possible."  
+        $privacyConfirmation += [System.Environment]::NewLine
+        $privacyConfirmation += "Are you sure you want to continue?"
+
+        if ($pscmdlet.ShouldProcess($privacyConfirmation)) 
         {
-            $zip = Get-FolderAsZip @zipParams -ReturnValue 'Content'   
-            if(!(Test-Path $destinationPath))
+            
+            $tempPath = invoke-command -ErrorAction:Continue @invokeCommandParams -script {
+                    $ErrorActionPreference = 'stop'
+                    Set-StrictMode -Version latest
+                    $tempPath = Join-path $env:temp ([system.io.path]::GetRandomFileName())
+                    if(!(Test-Path $tempPath))
+                    {
+                        mkdir $tempPath > $null
+                    }
+                    return $tempPath
+                }
+            Write-Verbose -message "tempPath: $tempPath"
+
+            $collectedPoints = 0
+            foreach($key in $dataPointsToCollect.Keys)
             {
-                mkdir $destinationPath > $null
+                $dataPoint = $dataPointsToCollect.$key
+                if(!$dataPoint.Skip -or !(&$dataPoint.skip))
+                {
+                    Write-ProgressMessage  -Status "Collecting '$($dataPoint.Description)' ..." -PercentComplete ($collectedPoints/$dataPoints.Count)
+                    $collected = Collect-DataPoint -dataPoint $dataPoint -invokeCommandParams $invokeCommandParams -Name $key
+                    if(!$collected)
+                    {
+                        Write-Warning "Did not collect  '$($dataPoint.Description)'"
+                    }
+                }
+                else {
+                    Write-Verbose -Message "Skipping collecting '$($dataPoint.Description)' ..."
+                }
+                $collectedPoints ++
             }
-            $zipPath = (Join-path $destinationPath "$($session.ComputerName)-dsc-diags-$((Get-Date).ToString('yyyyMMddhhmmss')).zip")
-            set-content -path $zipPath -value $zip
+            
+            if(!$destinationPath)
+            {
+                Write-ProgressMessage  -Status 'Getting destinationPath ...' -PercentComplete 74
+                $destinationPath = invoke-command -ErrorAction:Continue @invokeCommandParams -script { 
+                    $ErrorActionPreference = 'stop'
+                    Set-StrictMode -Version latest
+                    Join-path $env:temp ([system.io.path]::GetRandomFileName()) 
+                }
+            }
+
+            Write-Debug -message "destinationPath: $destinationPath" -verbose
+            $zipParams = @{ 
+                    sourceFolder = $tempPath
+                    destinationPath = $destinationPath
+                    Session = $session
+                    fileName = $fileName
+                }
+
+            Write-ProgressMessage  -Status 'Zipping files ...' -PercentComplete 75
+            if($local)
+            {
+                $zip = Get-FolderAsZip @zipParams
+                $zipPath = $zip
+            }
+            else 
+            {
+                $zip = Get-FolderAsZip @zipParams -ReturnValue 'Content'   
+                if(!(Test-Path $destinationPath))
+                {
+                    mkdir $destinationPath > $null
+                }
+                $zipPath = (Join-path $destinationPath "$($session.ComputerName)-dsc-diags-$((Get-Date).ToString('yyyyMMddhhmmss')).zip")
+                set-content -path $zipPath -value $zip
+            }
+
+            Start-Process $destinationPath
+            Write-Verbose -message "Please send this zip file the engineer you have been working with.  The engineer should have emailed you instructions on how to do this: $zipPath" -verbose
+            Write-ProgressMessage  -Completed
+            return $zipPath
         }
 
-        Start-Process $destinationPath
-        Write-Verbose -message "Please send this zip file the engineer you have been working with.  The engineer should have emailed you instructions on how to do this: $zipPath" -verbose
-        Write-ProgressMessage  -Completed
-        return $zipPath
     }
 }
 New-Alias -Name Get-xDscDiagnosticsZip -Value New-xDscDiagnosticsZip
@@ -498,7 +736,6 @@ function Get-XDscConfigurationDetail
         throw 'Must be a configuration status object'
       }
     })]
-    [Microsoft.Management.Infrastructure.CimInstance]
     $ConfigurationStatus
   )
   Process
@@ -528,7 +765,7 @@ function Get-XDscConfigurationDetail
 }
 
 # decrypt one of the lcm mof
-function Unprotect-xDscConfigurtion
+function Unprotect-xDscConfiguration
 {
   [CmdletBinding()]
   param(
@@ -564,5 +801,6 @@ function Unprotect-xDscConfigurtion
 Export-ModuleMember -Function @(
     'New-xDscDiagnosticsZip'
     'Get-XDscConfigurationDetail'
-    'Unprotect-xDscConfigurtion'
+    'Unprotect-xDscConfiguration'
+    'Get-xDscDiagnosticsZipDataPoint'
 ) -Alias 'Get-xDscDiagnosticsZip'
