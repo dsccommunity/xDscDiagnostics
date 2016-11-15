@@ -359,6 +359,17 @@ generated files.
         EventLog = 'Microsoft-Windows-ManagementOdataService/Operational'
         Target = $DscPullServerTargetName
     } # end data point
+    IisBinding = @{
+        Description = 'The Iis Bindings.'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
+            Get-WebBinding | Select-Object protocol, bindingInformation, sslFlags, ItemXPath | 
+                Out-String -Width 900 | Out-File -FilePath $tempPath\IisBindings.txt
+        }
+        Target = $DscPullServerTargetName
+    } # end data point
     HttpErrLogs = @{
         Description = 'The HTTPERR logs.'
         ScriptBlock = {
