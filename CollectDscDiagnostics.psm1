@@ -1,3 +1,4 @@
+$width = 900
 #
 # Zips the specified folder  
 # returns either the path or the contents of the zip files based on the returnvalue parameterer
@@ -366,7 +367,7 @@ generated files.
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             Get-WebBinding | Select-Object protocol, bindingInformation, sslFlags, ItemXPath | 
-                Out-String -Width 900 | Out-File -FilePath $tempPath\IisBindings.txt
+                Out-String -Width $width | Out-File -FilePath $tempPath\IisBindings.txt -Width $width
         }
         Target = $DscPullServerTargetName
     } # end data point
