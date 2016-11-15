@@ -283,8 +283,8 @@ try
 
             $dataPoints = @(Get-xDscDiagnosticsZipDataPoint)
 
-            it "should return 16 points" {
-                $dataPoints.Count | should be 16
+            it "should return 17 points" {
+                $dataPoints.Count | should be 17
             }
 
             foreach($dataPoint in $dataPoints) {

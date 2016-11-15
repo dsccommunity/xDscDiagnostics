@@ -1,3 +1,4 @@
+$width = 900
 #
 # Zips the specified folder  
 # returns either the path or the contents of the zip files based on the returnvalue parameterer
@@ -357,6 +358,17 @@ generated files.
     ODataEventLog = @{
         Description = 'The Management OData event log (used by the DSC Pull Server).'
         EventLog = 'Microsoft-Windows-ManagementOdataService/Operational'
+        Target = $DscPullServerTargetName
+    } # end data point
+    IisBinding = @{
+        Description = 'The Iis Bindings.'
+        ScriptBlock = {
+            param($tempPath)    
+            $ErrorActionPreference = 'stop'
+            Set-StrictMode -Version latest
+            Get-WebBinding | Select-Object protocol, bindingInformation, sslFlags, ItemXPath | 
+                Out-String -Width $width | Out-File -FilePath $tempPath\IisBindings.txt -Width $width
+        }
         Target = $DscPullServerTargetName
     } # end data point
     HttpErrLogs = @{
