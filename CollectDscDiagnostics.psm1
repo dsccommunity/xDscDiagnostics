@@ -737,7 +737,7 @@ function Get-XDscConfigurationDetail
 {
   [CmdletBinding()]
   param(
-    [Parameter(Mandatory=$true,ValuefromPipeline=$true)]
+    [Parameter(Mandatory=$true,ValuefromPipeline=$true,ParameterSetName="ByValue")]
     [ValidateScript({
       if($_.CimClass.CimClassName -eq 'MSFT_DSCConfigurationStatus') 
       {
@@ -748,12 +748,39 @@ function Get-XDscConfigurationDetail
         throw 'Must be a configuration status object'
       }
     })]
-    $ConfigurationStatus
+    $ConfigurationStatus,
+
+    [Parameter(Mandatory=$true,ParameterSetName="ByJobId")]
+    [ValidateNotNullOrEmpty()]
+    [ValidateScript({
+        [System.Guid] $jobGuid = [System.Guid]::Empty
+        if([System.Guid]::TryParse($_, ([ref] $jobGuid))) 
+        {
+          return $true
+        }
+        else
+        {
+          throw 'JobId must be a valid GUID'
+        }
+    })]
+    [string] $JobId
   )
   Process
   {
+     [bool] $hasJobId = $false
+     [string] $id = ''
+     if ($null -ne $ConfigurationStatus)
+     {
+         $id = $ConfigurationStatus.JobId
+     }
+     else 
+     {
+        [System.Guid] $jobGuid = [System.Guid]::Parse($JobId)
+        # ensure the job id string has the expected leading and trailing '{', '}' characters.       
+        $id = $jobGuid.ToString('B')
+     }
 
-    $detailsFiles = Get-ChildItem "$env:windir\System32\Configuration\ConfigurationStatus\$($ConfigurationStatus.JobId)-*.details.json"
+    $detailsFiles = Get-ChildItem -Path "$env:windir\System32\Configuration\ConfigurationStatus\$id-?.details.json"
     if($detailsFiles)
     {
       foreach($detailsFile in $detailsFiles)
@@ -762,7 +789,7 @@ function Get-XDscConfigurationDetail
           (Get-Content -Encoding Unicode -raw $detailsFile.FullName) | ConvertFrom-Json | foreach-object { write-output $_}
       }
     }
-    else
+    elseif ($null -ne $ConfigurationStatus)
     {
       if($($ConfigurationStatus.type) -eq 'Consistency')
       {
@@ -770,8 +797,12 @@ function Get-XDscConfigurationDetail
       }
       else
       {
-        Write-Error -Message "Could not find detail for job type: $($ConfigurationStatus.type); id: $($ConfigurationStatus.JobId)"
+        Write-Error -Message "Cannot find detail for job type: $($ConfigurationStatus.type); id: $($ConfigurationStatus.JobId)"
       }      
+    }
+    else
+    {
+      throw "Cannot find configuration details for job $id"
     }
   }
 }

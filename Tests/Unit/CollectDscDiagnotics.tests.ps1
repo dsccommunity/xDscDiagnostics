@@ -61,17 +61,17 @@ try
                     $resolvedTestDrive = (Resolve-Path $testDrive)
                     $resolvedTestFolder  = (Resolve-Path $testFolder).ProviderPath
                     'test' | Out-File -FilePath (Join-path $resolvedTestFolder 'test.txt')
-                    
+
                     # Issue, should take powershell paths.
                     Get-FolderAsZip -sourceFolder $resolvedTestFolder -destinationPath (Join-path $resolvedTestDrive 'zipout') -filename test.zip
-                     
-                    Test-path testdrive:\zipout\test.zip | should be $true                    
+
+                    Test-path testdrive:\zipout\test.zip | should be $true
                 }
-                
-            
+
+
             }
             Context -Name 'With Session returning content' -Fixture {
-                
+
             }
         }
         #endregion
@@ -83,12 +83,12 @@ try
             md $testFolder > $null
             $testFile = (Join-path $testFolder 'test.txt')
             'test' | Out-File -FilePath $testFile
-             
+
             it 'should throw when path is not container' {
-                {Test-ContainerParameter -Path $testFile} | should throw 'Path parameter must be a valid container.'    
+                {Test-ContainerParameter -Path $testFile} | should throw 'Path parameter must be a valid container.'
             }
             it 'should not throw when path is not container' {
-                {Test-ContainerParameter -Path $testFolder} | should not throw 
+                {Test-ContainerParameter -Path $testFolder} | should not throw
             }
         }
         #endregion
@@ -118,20 +118,20 @@ try
                 it "should throw" {
                     {$dataPoints = Get-xDscDiagnosticsZip -includedDataPoint @('test','test2')} | should throw 'Cannot validate argument on parameter ''includedDataPoint''. IncluedDataPoint must be an array of xDscDiagnostics datapoint objects.'
                 }
-                
+
             }
             $testFolder = 'testdrive:\GetxDscDiagnosticsZip'
             md $testFolder > $null
             $Global:GetxDscDiagnosticsZipPath = (Resolve-Path $testFolder)
-            
+
             Context 'verify with high level mock' {
-                
-            
+
+
                 Mock Invoke-Command -MockWith {return $Global:GetxDscDiagnosticsZipPath}
                 Mock Get-FolderAsZip -MockWith { Write-Verbose "executing Get-FolderAsZip mock"}
                 Mock Collect-DataPoint -MockWith {return $true}
                 Mock Start-Process -MockWith { Write-Verbose "executing start-process mock"}
-                
+
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
                     Assert-MockCalled -CommandName Invoke-Command -Times 2
@@ -142,13 +142,13 @@ try
             }
 
             Context 'verify with high level mock with eventlog datapoints' {
-                
-            
+
+
                 Mock Invoke-Command -MockWith {return $Global:GetxDscDiagnosticsZipPath}
                 Mock Get-FolderAsZip -MockWith { Write-Verbose "executing Get-FolderAsZip mock"}
                 Mock Collect-DataPoint -MockWith {return $true}
                 Mock Start-Process -MockWith { Write-Verbose "executing start-process mock"}
-                
+
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false -includedDataPoint (@(Get-xDscDiagnosticsZipDataPoint).where{$_.name -like '*eventlog'})
                     Assert-MockCalled -CommandName Invoke-Command -Times 2
@@ -168,7 +168,7 @@ try
                 Mock Get-ChildItem -MockWith {
                         dir -LiteralPath $Global:GetxDscDiagnosticsZipPath
                     } -ParameterFilter {$null -ne $path -and $Path -ne 'C:\Packages\Plugins\Microsoft.Powershell.*DSC' -and $path -notlike '*DscPackageFolder'}
-                Mock Copy-Item -MockWith { 
+                Mock Copy-Item -MockWith {
                         '' | out-file $destination -ErrorAction SilentlyContinue
                     } -ParameterFilter {$path -notmatch '\*.\*'}
                 Mock Copy-Item -MockWith {} -ParameterFilter {$path -match '\*.\*'}
@@ -181,18 +181,18 @@ try
                 mock Get-DSCResource -MockWith {[PSCustomObject]@{mockedresource='resource1'}}
                 $statusCommand = get-Command -name Get-DscConfigurationStatus -ErrorAction SilentlyContinue
                 if($statusCommand)
-                { 
+                {
                     mock Get-DscConfigurationStatus -MockWith {[PSCustomObject]@{mockedstatus='status1'}}
                 }
                 mock Get-Content -MockWith {[PSCustomObject]@{mockedEngineCache='engineCache1'}}
-                
+
                 Mock Get-FolderAsZip -MockWith {}
                 Mock Start-Process -MockWith {}
                 mock Export-EventLog -MockWith {}
-                mock Test-PullServerPresent -MockWith {$true}       
+                mock Test-PullServerPresent -MockWith {$true}
                 Mock Collect-DataPoint -MockWith {return $true} -ParameterFilter {$Name -eq 'IISLogs'}
-        
-                
+
+
                 it 'should collect data and zip the data' {
                     New-xDscDiagnosticsZip -confirm:$false
                     Assert-MockCalled -CommandName Get-FolderAsZip -Times 1 -Exactly
@@ -205,7 +205,7 @@ try
                     Assert-MockCalled -CommandName Get-Content -Times -0 -Exactly
                     Assert-MockCalled -CommandName Collect-DataPoint -Times 0 -Exactly
                     if($statusCommand)
-                    { 
+                    {
                         Assert-MockCalled -CommandName Get-DscConfigurationStatus -Times 1 -Exactly
                     }
                     Assert-MockCalled -CommandName Export-EventLog -Times 3 -Exactly
@@ -219,7 +219,7 @@ try
             }
         }
         #endregion
-        
+
         Describe "$($Global:ModuleName)\Get-XDscConfigurationDetail" {
             $testFile1='TestDrive:\id-0.details.json'
             $testFile2='TestDrive:\id-1.details.json'
@@ -230,9 +230,9 @@ try
                 FullName = $testFile2
             }
             )}
-            $status = new-object -TypeName 'Microsoft.Management.Infrastructure.CimInstance' -argumentList @('MSFT_DSCConfigurationStatus')                                                                                                        
-            $status.CimInstanceProperties.Add([Microsoft.Management.Infrastructure.CimProperty]::Create('JobId','id', [Microsoft.Management.Infrastructure.CimFlags]::None))  
-            $status.CimInstanceProperties.Add([Microsoft.Management.Infrastructure.CimProperty]::Create('Type','type', [Microsoft.Management.Infrastructure.CimFlags]::None))  
+            $status = new-object -TypeName 'Microsoft.Management.Infrastructure.CimInstance' -argumentList @('MSFT_DSCConfigurationStatus')
+            $status.CimInstanceProperties.Add([Microsoft.Management.Infrastructure.CimProperty]::Create('JobId','id', [Microsoft.Management.Infrastructure.CimFlags]::None))
+            $status.CimInstanceProperties.Add([Microsoft.Management.Infrastructure.CimProperty]::Create('Type','type', [Microsoft.Management.Infrastructure.CimFlags]::None))
             <#$status = [PSCustomObject] @{
                 CimClass=@{
                     CimClassName='MSFT_DSCConfigurationStatus'
@@ -255,7 +255,7 @@ try
             }
             ) | convertto-json | out-file $testFile2
             context "returning records from multiple files" {
-                
+
                 $results = $status | Get-XDscConfigurationDetail -verbose
                 it 'should return 4 records' {
                     $results.Count | should be 4
@@ -264,16 +264,65 @@ try
                     $results[3].name | should be 'name4'
                     $results[0].name | should be 'name1'
                 }
-                
+
             }
             context "invalid input" {
                 Write-verbose "ccn: $($status.CimClass.CimClassName)" -Verbose
                 $invalidStatus = [PSCustomObject] @{JobId = 'id'; Type = 'type'}
-                
+
                 it 'should throw cannot process argument' {
                     {Get-XDscConfigurationDetail -verbose -ConfigurationStatus $invalidStatus}| should throw 'Cannot validate argument on parameter 'ConfigurationStatus'. Must be a configuration status object".'
                 }
             }
+        }
+
+        Describe "$($Global:ModuleName)\Get-XDscConfigurationDetailByJobId" {
+            $jobId = [System.Guid]::NewGuid().ToString('B')
+            $testFile="TestDrive:\$jobId-0.details.json"
+
+            $status = new-object -TypeName 'Microsoft.Management.Infrastructure.CimInstance' -argumentList @('MSFT_DSCConfigurationStatus')
+            $status.CimInstanceProperties.Add([Microsoft.Management.Infrastructure.CimProperty]::Create('JobId','id', [Microsoft.Management.Infrastructure.CimFlags]::None))
+            $status.CimInstanceProperties.Add([Microsoft.Management.Infrastructure.CimProperty]::Create('Type','type', [Microsoft.Management.Infrastructure.CimFlags]::None))
+
+            @(@{
+                name='name1'
+            }
+            @{
+                name='name2'
+            }
+            ) | convertto-json | out-file $testFile
+
+            context 'Get configuration details by job id' {
+                Mock Get-ChildItem -MockWith {@([PSCustomObject]@{
+                    FullName = $testFile
+                }
+                )}
+
+                $results = Get-XDscConfigurationDetail -jobId $jobId
+                $results
+                it 'should return 2 records' {
+                    $results.Count | should be 2
+                }
+                it 'record 0 should be name1' {
+                    $results[0].name | should be 'name1'
+                }
+                it 'record 1 should be name2' {
+                    $results[1].name | should be 'name2'
+                }
+            }
+
+           context 'Get configuration details using an invalid GUID for a job id' {
+                it 'should throw cannot validate argument on parameter JobId' {
+                    {Get-XDscConfigurationDetail -verbose -JobId 'foo'} | should throw "Cannot validate argument on parameter 'JobId'. JobId must be a valid GUID"
+                }
+            }
+
+           context 'Get configuration details using a job id that does not exist' {
+                $jobId = [System.Guid]::NewGuid().ToString('B')
+                it 'should throw Cannot find configuration details for job' {
+                    {Get-XDscConfigurationDetail -JobId $jobId} | should throw "Cannot find configuration details for job $jobId"
+                }
+            }           
         }
 
         Describe "$($Global:ModuleName)\Get-xDscDiagnosticsZipDataPoint" {
@@ -288,7 +337,7 @@ try
             }
 
             foreach($dataPoint in $dataPoints) {
-                Context "DataPoint $($dataPoint.Name)" { 
+                Context "DataPoint $($dataPoint.Name)" {
                     it "should have name" {
                         $dataPoint.Name | should not benullorempty
                     }
