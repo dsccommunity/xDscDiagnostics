@@ -293,10 +293,13 @@ try
             ) | convertto-json | out-file $testFile
 
             context 'Get configuration details by job id' {
+                # Path queried by Get-XDscConfigurationDetail to retrieve the configuration details file
+                $gciParameter = "$env:windir\System32\Configuration\ConfigurationStatus\$jobId-?.details.json"
+                
                 Mock Get-ChildItem -MockWith {@([PSCustomObject]@{
                     FullName = $testFile
-                }
-                )}
+                } 
+                )} -ParameterFilter { $Path -eq $gciParameter }
 
                 $results = Get-XDscConfigurationDetail -jobId $jobId
                 $results
@@ -313,7 +316,7 @@ try
 
            context 'Get configuration details using an invalid GUID for a job id' {
                 it 'should throw cannot validate argument on parameter JobId' {
-                    {Get-XDscConfigurationDetail -verbose -JobId 'foo'} | should throw "Cannot validate argument on parameter 'JobId'. JobId must be a valid GUID"
+                    {Get-XDscConfigurationDetail -JobId 'foo'} | should throw "Cannot validate argument on parameter 'JobId'. JobId must be a valid GUID"
                 }
             }
 
