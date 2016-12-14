@@ -91,6 +91,11 @@ This cmdlet returns the list a zip data point.  A data point has the following p
 
 ### Unreleased
 
+### 2.6.0.0
+
+* Added JobId parameter set to Get-xDscConfiguration
+* Added IIS binding collection
+
 ### 2.5.0.0
 * Added ability for New-xDscDiagnosticsZip to only collect the `xDscDiagnosticsZipDataPoint` collection you specify by data point or by group (called target).
 * Added Get-xDscDiagnosticsZipDataPoint
