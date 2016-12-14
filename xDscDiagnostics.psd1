@@ -3,7 +3,7 @@
 @{
 
 
-ModuleVersion = '2.5.0.0'
+ModuleVersion = '2.6.0.0'
 GUID = 'ef098cb4-f7e9-4763-b636-0cd9799e1c9a'
 
 Author = 'Microsoft Corporation'
@@ -40,9 +40,8 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '* Added ability for New-xDscDiagnosticsZip to only collect the `xDscDiagnosticsZipDataPoint` collection you specify by data point or by group (called target).
-* Added Get-xDscDiagnosticsZipDataPoint
-* Added ability for New-xDscDiagnosticsZip to collect IIS and HTTPErr logs
+        ReleaseNotes = '* Added JobId parameter set to Get-xDscConfiguration
+* Added IIS binding collection
 
 '
 
@@ -50,5 +49,6 @@ PrivateData = @{
 
 } # End of PrivateData hashtable
 }
+
 
 

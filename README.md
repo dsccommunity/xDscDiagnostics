@@ -91,6 +91,8 @@ This cmdlet returns the list a zip data point.  A data point has the following p
 
 ### Unreleased
 
+### 2.6.0.0
+
 * Added JobId parameter set to Get-xDscConfiguration
 * Added IIS binding collection
 
