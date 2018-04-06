@@ -19,18 +19,18 @@ The **xDscDiagnostics** module exposes two primary functions--**Get-xDscOperatio
 
 ### Install the stable version module.  
 * For PowerShell Version 5 and higher running the following steps:
-	* `install-module xdscdiagnostics -Repository 'PSGallery'`
+    * `install-module xdscdiagnostics -Repository 'PSGallery'`
 * For PowerShell Version 4 and prior.
-	* Download the [zip of the master repo](https://github.com/PowerShell/xDscDiagnostics/archive/master.zip)
-	* Unzip the zip file to `C:\Windows\System32\WindowsPowerShell\v1.0\Modules\xDscDiagnostics` making sure the root of the zip ends up in the root of that folder.	
-	
+    * Download the [zip of the master repo](https://github.com/PowerShell/xDscDiagnostics/archive/master.zip)
+    * Unzip the zip file to `C:\Windows\System32\WindowsPowerShell\v1.0\Modules\xDscDiagnostics` making sure the root of the zip ends up in the root of that folder.
+
 ### Install the dev version module.  
 * For PowerShell Version 5 and higher running the following steps:
-	* `Register-PSRepository -Name xDscDiagnosticsDev -SourceLocation https://ci.appveyor.com/nuget/xdscdiagnostics -InstallationPolicy Trusted -Verbose`
-	* `install-module xdscdiagnostics -Repository 'xDscDiagnosticsDev'`
+    * `Register-PSRepository -Name xDscDiagnosticsDev -SourceLocation https://ci.appveyor.com/nuget/xdscdiagnostics -InstallationPolicy Trusted -Verbose`
+    * `install-module xdscdiagnostics -Repository 'xDscDiagnosticsDev'`
 * For PowerShell Version 4 and prior.
-	* Download the [zip of the dev repo](https://github.com/PowerShell/xDscDiagnostics/archive/dev.zip)
-	* Unzip the zip file to `C:\Windows\System32\WindowsPowerShell\v1.0\Modules\xDscDiagnostics` making sure the root of the zip ends up in the root of that folder.	
+    * Download the [zip of the dev repo](https://github.com/PowerShell/xDscDiagnostics/archive/dev.zip)
+    * Unzip the zip file to `C:\Windows\System32\WindowsPowerShell\v1.0\Modules\xDscDiagnostics` making sure the root of the zip ends up in the root of that folder.
 
 ## Cmdlets
 
@@ -86,7 +86,7 @@ This cmdlet returns the list a zip data point.  A data point has the following p
 * **Name**: A unique name for the data point.
 * **Description**: A description of the data point.
 * **Target**: The general area of diagnostics the datapoint targets.
-			
+
 ## Versions
 
 ### Unreleased
