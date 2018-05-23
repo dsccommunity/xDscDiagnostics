@@ -71,20 +71,20 @@ To diagnose an operation with job Id 11112222-1111-1122-1122-111122221111
 Trace-xDscOperation -ComputerName XYZ -sequenceID 2
 To Get Logs from a remote computer
 
-
-PS C:\>Trace-xDscOperation -Computername XYZ -Credential $mycredential -sequenceID 2
+.EXAMPLE
+Trace-xDscOperation -Computername XYZ -Credential $mycredential -sequenceID 2
 
 To Get logs from a remote computer with credentials
 
-
-PS C:\>Trace-xDscOperation -ComputerName @("PN25113D0891", "PN25113D0890")
+.EXAMPLE
+Trace-xDscOperation -ComputerName @("PN25113D0891", "PN25113D0890")
 
 To get logs from multiple remote computers
 
-
+.NOTES
 Please note that to perform actions on the remote computer, have the firewall for remote configuration enabled. This can be done with the following command:
 
-PS C:\>New-NetFirewallRule -Name "Service RemoteAdmin" -Action Allow
+New-NetFirewallRule -Name "Service RemoteAdmin" -Action Allow
 #>
 function Trace-xDscOperation
 {
