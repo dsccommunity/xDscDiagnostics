@@ -93,6 +93,8 @@ This cmdlet returns the list a zip data point.  A data point has the following p
 
 ### Unreleased
 
+### 2.7.0.0
+
 * Fixed help formatting.
 
 ### 2.6.0.0
