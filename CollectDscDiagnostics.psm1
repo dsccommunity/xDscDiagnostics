@@ -340,6 +340,16 @@ generated files.
         EventLog = 'Microsoft-Windows-DSC/Operational'
         Target = $DscTargetName
     } # end data point
+    DscEventLogDebug = @{
+        Description = 'The DSC debug event log.'
+        EventLog = 'Microsoft-Windows-DSC/Debug'
+        Target = $DscTargetName
+    } # end data point
+    DscEventLogAnalytic = @{
+        Description = 'The DSC analytic event log.'
+        EventLog = 'Microsoft-Windows-DSC/Analytic'
+        Target = $DscTargetName
+    } # end data point
     ApplicationEventLog = @{
         Description = 'The Application event log.'
         EventLog = 'Application'
