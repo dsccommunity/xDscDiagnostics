@@ -18,7 +18,7 @@ function Get-SingleRelevantErrorMessage(<#[System.Diagnostics.Eventing.Reader.Ev
     $outputErrorMessage = ""
     $eventId = $errorEvent.Id
     $propertyIndex = $requiredPropertyIndex[$eventId]
-    if ($propertyIndex -ne -1)
+    if ($propertyIndex -and $propertyIndex -ne -1)
     {
         #This means You need just the property from the indices hash
         $outputErrorMessage = $errorEvent.Properties[$propertyIndex].Value

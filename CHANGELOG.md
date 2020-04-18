@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- xDscDiagnostics
-  - Added automatic release with a new CI pipeline.
+- Added automatic release with a new CI pipeline.
+
+### Fixed
+
+- Fixes #52: Error 'Index operation failed; the array index evaluated to null.'
 
 ## [2.7.0.0] - 2018-06-13
 
