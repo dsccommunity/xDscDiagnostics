@@ -712,7 +712,7 @@ function Get-AllGroupedDscEvents
     $outputErrorMessage = ""
     $eventId = $errorEvent.Id
     $propertyIndex = $requiredPropertyIndex[$eventId]
-    if($propertyIndex -ne -1 -and $propertyIndex -ne $null)
+    if($propertyIndex -and $propertyIndex -ne -1)
     {
 
         #This means You need just the property from the indices hash
