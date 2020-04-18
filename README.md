@@ -1,8 +1,8 @@
 # xDscDiagnostics
 
-[![Build Status](https://dev.azure.com/dsccommunity/xDscDiagnostics/_apis/build/status/dsccommunity.xDscDiagnostics?branchName=master)](https://dev.azure.com/dsccommunity/xDscDiagnostics/_build/latest?definitionId={definitionId}&branchName=master)
-![Azure DevOps coverage (branch)](https://img.shields.io/azure-devops/coverage/dsccommunity/xDscDiagnostics/{definitionId}/master)
-[![Azure DevOps tests](https://img.shields.io/azure-devops/tests/dsccommunity/xDscDiagnostics/{definitionId}/master)](https://dsccommunity.visualstudio.com/xDscDiagnostics/_test/analytics?definitionId={definitionId}&contextType=build)
+[![Build Status](https://dev.azure.com/dsccommunity/xDscDiagnostics/_apis/build/status/dsccommunity.xDscDiagnostics?branchName=master)](https://dev.azure.com/dsccommunity/xDscDiagnostics/_build/latest?definitionId=33&branchName=master)
+![Azure DevOps coverage (branch)](https://img.shields.io/azure-devops/coverage/dsccommunity/xDscDiagnostics/33/master)
+[![Azure DevOps tests](https://img.shields.io/azure-devops/tests/dsccommunity/xDscDiagnostics/33/master)](https://dsccommunity.visualstudio.com/xDscDiagnostics/_test/analytics?definitionId=33&contextType=build)
 [![PowerShell Gallery (with prereleases)](https://img.shields.io/powershellgallery/vpre/xDscDiagnostics?label=xDscDiagnostics%20Preview)](https://www.powershellgallery.com/packages/xDscDiagnostics/)
 [![PowerShell Gallery](https://img.shields.io/powershellgallery/v/xDscDiagnostics?label=xDscDiagnostics)](https://www.powershellgallery.com/packages/xDscDiagnostics/)
 
