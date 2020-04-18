@@ -2,10 +2,11 @@ TOPIC
     about_xDscDiagnostics
 
 SHORT DESCRIPTION
-    
+    This module helps in reading details and analyzing DSC events.
 
 LONG DESCRIPTION
-    {{ Add Long description here }}
+    This module contains cmdlets for analyzing DSC event logs and identifying the
+    causes of any failure in a DSC operation.
 
 EXAMPLES
     PS C:\> {{ add examples here }}

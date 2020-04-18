@@ -1,52 +1,57 @@
-
-
 @{
+    RootModule        = 'xDscDiagnostics.psm1'
 
+    ModuleVersion     = '0.0.1'
 
-moduleVersion = '2.7.0.0'
-GUID = 'ef098cb4-f7e9-4763-b636-0cd9799e1c9a'
+    GUID              = 'ef098cb4-f7e9-4763-b636-0cd9799e1c9a'
 
-Author = 'Microsoft Corporation'
-CompanyName = 'Microsoft Corporation'
-Copyright = '(c) 2013 Microsoft Corporation. All rights reserved.'
+    Author            = 'DSC Community'
+    CompanyName       = 'DSC Community'
+    Copyright         = 'Copyright the DSC Community contributors. All rights reserved.'
 
-Description = 'Module to help in reading details from DSC events'
+    Description       = 'Module to help in reading details from DSC events.'
 
-PowerShellVersion = '4.0'
+    PowerShellVersion = '4.0'
 
-CLRVersion = '4.0'
+    CLRVersion        = '4.0'
 
-FunctionsToExport = @("*")
+    # Functions to export from this module
+    FunctionsToExport = @()
 
-AliasesToExport = '*'
+    # Cmdlets to export from this module
+    CmdletsToExport = @()
 
-NestedModules = @('xDscDiagnostics.psm1','CollectDscDiagnostics.psm1')
+    # Variables to export from this module
+    VariablesToExport = @()
 
-# Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-PrivateData = @{
+    # Aliases to export from this module
+    AliasesToExport = @()
 
-    PSData = @{
+    DscResourcesToExport = @()
 
-        # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = @('DesiredStateConfiguration', 'DSC', 'DSCResourceKit')
+    NestedModules     = @()
 
-        # A URL to the license for this module.
-        LicenseUri = 'https://github.com/PowerShell/xDscDiagnostics/blob/master/LICENSE'
+    PrivateData       = @{
+        PSData = @{
+            # Set to a prerelease string value if the release should be a prerelease.
+            Prerelease = ''
 
-        # A URL to the main website for this project.
-        ProjectUri = 'https://github.com/PowerShell/xDscDiagnostics'
+            # Tags applied to this module. These help with module discovery in online galleries.
+            Tags         = @('DesiredStateConfiguration', 'DSC', 'DSCResourceKit', 'Diagnostics')
 
-        # A URL to an icon representing this module.
-        # IconUri = ''
+            # A URL to the license for this module.
+            LicenseUri   = 'https://github.com/dsccommunity/xDscDiagnostics/blob/master/LICENSE'
 
-        # ReleaseNotes of this module
-        ReleaseNotes = '* Fixed help formatting.
+            # A URL to the main website for this project.
+            ProjectUri   = 'https://github.com/dsccommunity/xDscDiagnostics'
 
-'
+            # A URL to an icon representing this module.
+            IconUri = 'https://dsccommunity.org/images/DSC_Logo_300p.png'
 
-    } # End of PSData hashtable
-
-} # End of PrivateData hashtable
+            # ReleaseNotes of this module
+            ReleaseNotes = ''
+        } # End of PSData hashtable
+    } # End of PrivateData hashtable
 }
 
 
