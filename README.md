@@ -92,6 +92,7 @@ This cmdlet returns the list a zip data point.  A data point has the following p
 ## Versions
 
 ### Unreleased
+Fixes #52: Error 'Index operation failed; the array index evaluated to null.'
 
 ### 2.7.0.0
 
