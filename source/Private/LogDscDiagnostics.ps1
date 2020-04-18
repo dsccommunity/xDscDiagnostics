@@ -1,7 +1,7 @@
 
 function LogDscDiagnostics
 {
-    param($text , [Switch]$Error , [Switch]$Verbose , [Switch]$Warning)
+    param ($text , [Switch]$Error , [Switch]$Verbose , [Switch]$Warning)
     $formattedText = "XDscDiagnostics : $text"
     if ($Error)
     {

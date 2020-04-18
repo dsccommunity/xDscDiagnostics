@@ -27,10 +27,12 @@ Lists operations for the array of computernames passed in.
 function Get-xDscOperation
 {
     [cmdletBinding()]
-    param(
+    param
+    (
         [UInt32]$Newest = 10,
         [String[]]$ComputerName,
-        [pscredential]$Credential)
+        [pscredential]$Credential
+    )
     Add-ClassTypes
     if ($ComputerName)
     {

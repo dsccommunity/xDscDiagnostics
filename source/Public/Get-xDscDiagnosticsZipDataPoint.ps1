@@ -2,7 +2,7 @@
 # New-xDscDiagnosticsZip
 function Get-xDscDiagnosticsZipDataPoint
 {
-    foreach($key in $script:dataPoints.Keys)
+    foreach ($key in $script:dataPoints.Keys)
     {
         $dataPoint = $script:dataPoints.$key
         $dataPointObj = ([PSCustomObject] @{

@@ -2,7 +2,9 @@
 function Get-DscOperationInternal
 {
     param
-    ([UInt32]$Newest = 10)
+    (
+        [UInt32]$Newest = 10
+    )
     #Groupo all events
     $groupedEvents = Get-AllGroupedDscEvents
 
@@ -20,6 +22,5 @@ function Get-DscOperationInternal
             break;
         }
         $index++
-
     }
 }

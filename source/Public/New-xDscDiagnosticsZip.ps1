@@ -9,7 +9,8 @@ function New-xDscDiagnosticsZip
 {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'default')]
     [Alias('Get-xDscDiagnosticsZip')]
-    param(
+    param
+    (
         [Parameter(ParameterSetName = 'default')]
         [Parameter(ParameterSetName = 'includedDataPoints')]
         [Parameter(ParameterSetName = 'includedTargets')]
@@ -27,16 +28,20 @@ function New-xDscDiagnosticsZip
 
         [Parameter(ParameterSetName = 'includedDataPoints', Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [ValidateScript( { foreach ($point in $_)
+        [ValidateScript({
+            foreach ($point in $_)
+            {
+                if ($_.pstypenames -notcontains $script:datapointTypeName)
                 {
-                    if ($_.pstypenames -notcontains $script:datapointTypeName)
-                    {
-                        throw 'IncluedDataPoint must be an array of xDscDiagnostics datapoint objects.'
-                    }
-                } ; return $true })]
+                    throw 'IncluedDataPoint must be an array of xDscDiagnostics datapoint objects.'
+                }
+            }
+
+            return $true
+        })]
         [object[]] $includedDataPoint
     )
-    DynamicParam
+    dynamicparam
     {
         $attributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::new()
 
@@ -55,7 +60,7 @@ function New-xDscDiagnosticsZip
         return $paramDictionary
     }
 
-    Process
+    process
     {
         [string[]] $dataPointTarget = $PSBoundParameters.DataPointTarget
         $dataPointsToCollect = @{ }
@@ -117,7 +122,6 @@ function New-xDscDiagnosticsZip
 
         if ($pscmdlet.ShouldProcess($privacyConfirmation))
         {
-
             $tempPath = invoke-command -ErrorAction:Continue @invokeCommandParams -script {
                 $ErrorActionPreference = 'stop'
                 Set-StrictMode -Version latest

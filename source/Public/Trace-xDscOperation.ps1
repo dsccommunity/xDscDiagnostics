@@ -51,14 +51,17 @@ New-NetFirewallRule -Name "Service RemoteAdmin" -Action Allow
 #>
 function Trace-xDscOperation
 {
-
     [cmdletBinding()]
-    param(
+    param
+    (
         [UInt32]$SequenceID = 1, #latest is by default
         [Guid]$JobId,
         [String[]]$ComputerName,
-        [pscredential]$Credential)
+        [pscredential]$Credential
+    )
+
     Add-ClassTypes
+
     if ($ComputerName)
     {
         $script:UsingComputerName = $true
@@ -72,7 +75,6 @@ function Trace-xDscOperation
             $script:ThisComputerName = $thisComputerName
             $script:ThisCredential = $Credential
             Trace-DscOperationInternal  @PSBoundParameters
-
         }
     }
     else

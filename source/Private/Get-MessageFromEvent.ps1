@@ -1,6 +1,5 @@
 function Get-MessageFromEvent($EventRecord , [switch]$verboseType)
 {
-
     #You need to remove the job ID and send back the message
     if ($EventRecord.Id -in $script:DscVerboseEventIdsAndPropertyIndex.Keys -and $verboseType)
     {
@@ -12,5 +11,4 @@ function Get-MessageFromEvent($EventRecord , [switch]$verboseType)
 
 
     return $NonJobIdText
-
 }

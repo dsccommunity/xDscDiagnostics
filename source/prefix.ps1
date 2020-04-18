@@ -12,7 +12,11 @@
  #####################################################################################################################################################>
 
 #region Global variables
-$script:DscVerboseEventIdsAndPropertyIndex = @{4100 = 3; 4117 = 2; 4098 = 3 };
+$script:DscVerboseEventIdsAndPropertyIndex = @{
+    4100 = 3
+    4117 = 2
+    4098 = 3
+}
 $script:DscLogName = "Microsoft-windows-dsc"
 $script:RedirectOutput = $false
 $script:TemporaryHtmLocation = "$env:TEMP/dscreport"
@@ -43,7 +47,7 @@ $script:dataPoints = @{
         Description = 'Logs from the Azure VM Agent, including all extensions'
         Target      = $script:azureDscExtensionTargetName
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             Copy-Item -Recurse C:\WindowsAzure\Logs $tempPath\WindowsAzureLogs -ErrorAction SilentlyContinue
@@ -57,7 +61,7 @@ generated files.
 '@
         Target      = $script:azureDscExtensionTargetName
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             $dirs = @(Get-ChildItem -Path C:\Packages\Plugins\Microsoft.Powershell.*DSC -ErrorAction SilentlyContinue)
@@ -114,7 +118,7 @@ generated files.
     IisBinding             = @{
         Description = 'The Iis Bindings.'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             $width = 900
@@ -128,7 +132,7 @@ generated files.
     HttpErrLogs            = @{
         Description = 'The HTTPERR logs.'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             mkdir $tempPath\HttpErr > $null
@@ -139,7 +143,7 @@ generated files.
     IISLogs                = @{
         Description = 'The IIS logs.'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             Import-Module WebAdministration
@@ -152,7 +156,7 @@ generated files.
     ServicingLogs          = @{
         Description = 'The Windows Servicing logs, including, WindowsUpdate, CBS and DISM logs.'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             mkdir $tempPath\CBS > $null
@@ -166,7 +170,7 @@ generated files.
     HotfixList             = @{
         Description = 'The output of Get-Hotfix'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             Get-HotFix | Out-String | Out-File  $tempPath\HotFixIds.txt
@@ -176,7 +180,7 @@ generated files.
     GetLcmOutput           = @{
         Description = 'The output of Get-DscLocalConfigurationManager'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             $dscLcm = Get-DscLocalConfigurationManager
@@ -188,7 +192,7 @@ generated files.
     VersionInformation     = @{
         Description = 'The PsVersionTable and OS version information'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             $PSVersionTable | Out-String | Out-File   $tempPath\psVersionTable.txt
@@ -199,7 +203,7 @@ generated files.
     CertThumbprints        = @{
         Description = 'The local machine cert thumbprints.'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             dir Cert:\LocalMachine\My\ | select -ExpandProperty Thumbprint | out-string | out-file $tempPath\LocalMachineCertThumbprints.txt
@@ -209,7 +213,7 @@ generated files.
     DscResourceInventory   = @{
         Description = 'The name, version and path to installed dsc resources.'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             Get-DscResource 2> $tempPath\ResourceErrors.txt | select name, version, path | out-string | out-file $tempPath\ResourceInfo.txt
@@ -219,7 +223,7 @@ generated files.
     DscConfigurationStatus = @{
         Description = 'The output of Get-DscConfigurationStatus -all'
         ScriptBlock = {
-            param($tempPath)
+            param ($tempPath)
             $ErrorActionPreference = 'stop'
             Set-StrictMode -Version latest
             $statusCommand = get-Command -name Get-DscConfigurationStatus -ErrorAction SilentlyContinue

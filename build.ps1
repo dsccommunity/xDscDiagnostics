@@ -86,7 +86,7 @@ process
         return
     }
 
-    # Execute the Build Process from the .build.ps1 path.
+    # Execute the Build process from the .build.ps1 path.
     Push-Location -Path $PSScriptRoot -StackName BeforeBuild
 
     try

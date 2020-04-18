@@ -25,7 +25,9 @@ function Get-AllGroupedDscEvents
         LogDscDiagnostics -Error "Error : Could not find any events. Either a DSC operation has not been run, or the event logs are turned off . Please ensure the event logs are turned on in DSC. To set an event log, run the command wevtutil Set-Log <channelName> /e:true, example: wevtutil set-log 'Microsoft-Windows-Dsc/Operational' /e:true /q:true"
         return
     }
-    $groupedEvents = $allEvents | Group { $_.Properties[0].Value }
+    $groupedEvents = $allEvents | Group-Object {
+        $_.Properties[0].Value
+    }
 
     $script:LatestEvent[$script:ThisComputerName] = $latestEvent
     $script:LatestGroupedEvents[$script:ThisComputerName] = $groupedEvents

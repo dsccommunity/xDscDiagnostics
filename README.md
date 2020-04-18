@@ -259,7 +259,7 @@ New-xDscDiagnosticsZip -Session $SessionToVm
 
 ``` PowerShell
 Start-DscConfiguration .\Example -Wait
-Get-DscConfigurationStatus | Get-XDscConfigurationDetail
+Get-DscConfigurationStatus | Get-xDscConfigurationDetail
 ```
 
 Example output

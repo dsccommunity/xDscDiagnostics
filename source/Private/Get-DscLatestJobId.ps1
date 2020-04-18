@@ -1,7 +1,6 @@
 #Gets the JOB ID of the most recently executed script.
 function Get-DscLatestJobId
 {
-
     #Collect operational events , they're ordered from newest to oldest.
 
     $allEvents = Get-WinEvent -LogName "$script:DscLogName/operational" -MaxEvents 2 -ea Ignore

@@ -1,6 +1,6 @@
 function Get-DscErrorMessage
 {
-    param(<#[System.Diagnostics.Eventing.Reader.EventRecord[]]#>$ErrorRecords)
+    param (<#[System.Diagnostics.Eventing.Reader.EventRecord[]]#>$ErrorRecords)
     $cimErrorId = 4131
 
     $errorText = ""

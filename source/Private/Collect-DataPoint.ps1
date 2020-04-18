@@ -2,7 +2,8 @@
 # Returns $true if it believes it collected the datapoint
 function Collect-DataPoint
 {
-    param (
+    param
+    (
         [Parameter(Mandatory = $true)]
         [ValidateNotNull()]
         [String] $Name,
@@ -16,14 +17,14 @@ function Collect-DataPoint
     )
 
     $collected = $false
-    if($dataPoint.ScriptBlock)
+    if ($dataPoint.ScriptBlock)
     {
         Write-Verbose -Message "Collecting '$name-$($dataPoint.Description)' using ScripBlock ..."
         Invoke-Command -ErrorAction:Continue @invokeCommandParams -script $dataPoint.ScriptBlock -argumentlist @($tempPath)
         $collected = $true
     }
 
-    if($dataPoint.EventLog)
+    if ($dataPoint.EventLog)
     {
         Write-Verbose -Message "Collecting '$name-$($dataPoint.Description)' using Eventlog ..."
         try

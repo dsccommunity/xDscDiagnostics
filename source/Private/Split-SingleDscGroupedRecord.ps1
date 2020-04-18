@@ -1,6 +1,7 @@
 function Split-SingleDscGroupedRecord
 {
-    param(
+    param
+    (
         $singleRecordInGroupedEvents,
         $index)
 
@@ -69,7 +70,12 @@ function Split-SingleDscGroupedRecord
             $eventMessageFromEvent = Get-MessageFromEvent $thisEvent -verboseType
             #Add event with its tag
 
-            $thisObject = New-Object PSobject -Property @{TimeCreated = $timeCreatedOfEvent; EventType = $thisType; Event = $thisEvent; Message = $eventMessageFromEvent }
+            $thisObject = New-Object PSobject -Property @{
+                TimeCreated = $timeCreatedOfEvent
+                EventType = $thisType
+                Event = $thisEvent
+                Message = $eventMessageFromEvent
+            }
             $defaultProperties = @('TimeCreated' , 'Message' , 'EventType')
             $defaultDisplayPropertySet = New-Object System.Management.Automation.PSPropertySet('DefaultDisplayPropertySet' , [string[]]$defaultProperties)
             $defaultMembers = [System.Management.Automation.PSMemberInfo[]]@($defaultDisplayPropertySet)

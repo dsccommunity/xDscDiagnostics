@@ -1,7 +1,8 @@
 function Trace-DscOperationInternal
 {
     [cmdletBinding()]
-    param(
+    param
+    (
         [UInt32]$SequenceID = 1, #latest is by default
         [Guid]$JobId
 
@@ -62,8 +63,15 @@ function Trace-DscOperationInternal
             {
                 $thisJobId = $thisRunsOutputEvents.JobId
             }
-            $allEventMessageObject += New-Object Microsoft.PowerShell.xDscDiagnostics.TraceOutput -Property @{EventType = $ThisType; TimeCreated = $ThisTimeCreated; Message = $ThisMessage; ComputerName = $script:ThisComputerName; JobID = $thisJobId; SequenceID = $SequenceID; Event = $ThisEvent }
-
+            $allEventMessageObject += New-Object Microsoft.PowerShell.xDscDiagnostics.TraceOutput -Property @{
+                EventType = $ThisType
+                TimeCreated = $ThisTimeCreated
+                Message = $ThisMessage
+                ComputerName = $script:ThisComputerName
+                JobID = $thisJobId
+                SequenceID = $SequenceID
+                Event = $ThisEvent
+            }
         }
 
     return $allEventMessageObject

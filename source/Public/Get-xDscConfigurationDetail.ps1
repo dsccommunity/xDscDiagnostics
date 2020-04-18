@@ -2,7 +2,8 @@
 function Get-xDscConfigurationDetail
 {
     [CmdletBinding()]
-    param(
+    param
+    (
         [Parameter(Mandatory = $true, ValuefromPipeline = $true, ParameterSetName = "ByValue")]
         [ValidateScript( {
                 if ($_.CimClass.CimClassName -eq 'MSFT_DSCConfigurationStatus')
@@ -31,7 +32,7 @@ function Get-xDscConfigurationDetail
             })]
         [string] $JobId
     )
-    Process
+    process
     {
         [bool] $hasJobId = $false
         [string] $id = ''
@@ -46,13 +47,17 @@ function Get-xDscConfigurationDetail
             $id = $jobGuid.ToString('B')
         }
 
-        $detailsFiles = Get-ChildItem -Path "$env:windir\System32\Configuration\ConfigurationStatus\$id-?.details.json"
+        $detailsFiles = Get-ChildItem -Path "$env:windir\System32\Configuration\ConfigurationStatus\$id-?.details.json" -ErrorAction 'SilentlyContinue'
         if ($detailsFiles)
         {
             foreach ($detailsFile in $detailsFiles)
             {
                 Write-Verbose -Message "Getting details from: $($detailsFile.FullName)"
-                (Get-Content -Encoding Unicode -raw $detailsFile.FullName) | ConvertFrom-Json | foreach-object { write-output $_ }
+                (Get-Content -Encoding Unicode -raw $detailsFile.FullName) |
+                    ConvertFrom-Json |
+                        Foreach-Object {
+                            Write-Output $_
+                        }
             }
         }
         elseif ($null -ne $ConfigurationStatus)

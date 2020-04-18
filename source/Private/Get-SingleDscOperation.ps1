@@ -2,7 +2,8 @@
 function Get-SingleDscOperation
 {
     #If you specify a sequence ID, then the diagnosis will be for that sequence ID.
-    param(
+    param
+    (
         [Uint32]$indexInArray = 0,
         [Guid]$JobId
     )
@@ -20,7 +21,6 @@ function Get-SingleDscOperation
         $indexInArray = 0;
         foreach ($eventGroup in $groupedEvents)
         {
-
             #Check if the Job ID is present in any
             if ($($eventGroup.Name) -match $JobId)
             {
@@ -28,15 +28,17 @@ function Get-SingleDscOperation
             }
             $indexInArray ++
         }
+
         if ($indexInArray -ge $groupedEvents.Count)
         {
-
             #This means the job id doesn't exist
             LogDscDiagnostics -Error "The Job ID Entered $JobId, does not exist among the dsc operations. To get a list of previously run DSC operations, run this command : Get-xDscOperation"
             return
         }
     }
+
     $requiredRecord = $groupedEvents[$indexInArray]
+
     if ($requiredRecord -eq $null)
     {
         LogDscDiagnostics -Error "Could not obtain the required record! "

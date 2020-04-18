@@ -30,7 +30,8 @@ C:\PS> Update-xDscEventLogStatus -Channel "Debug" -ComputerName "ABC" -Status Di
 function Update-xDscEventLogStatus
 {
     [cmdletBinding()]
-    param(
+    param
+    (
         [Parameter(Mandatory)]
         [ValidateSet('Analytic' , 'Debug' , 'Operational')]
         [String]$Channel,
@@ -58,12 +59,10 @@ function Update-xDscEventLogStatus
     #If there is no computer name specified, just invoke the command in the same computer
     if (!$ComputerName)
     {
-
         Invoke-Expression $commandToExecute
     }
     else
     {
-
         #For any other computer, invoke command.
         $scriptToSetChannel = [Scriptblock]::Create($commandToExecute)
 

@@ -4,7 +4,8 @@
 function Test-ContainerParameter
 {
     [CmdletBinding()]
-    param(
+    param
+    (
         [string] $Path,
         [string] $Name = 'Path'
     )

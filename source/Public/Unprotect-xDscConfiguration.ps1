@@ -2,8 +2,9 @@
 function Unprotect-xDscConfiguration
 {
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory = $true, ValuefromPipeline = $true)]
+    param
+    (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [ValidateSet('Current', 'Pending', 'Previous')]
         $Stage
     )
@@ -14,7 +15,6 @@ function Unprotect-xDscConfiguration
 
     if (Test-Path $path)
     {
-
         $secureString = Get-Content $path -Raw
 
         $enc = [system.Text.Encoding]::Default

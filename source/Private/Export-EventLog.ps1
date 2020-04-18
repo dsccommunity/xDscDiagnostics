@@ -6,7 +6,8 @@
 function Export-EventLog
 {
     [CmdletBinding()]
-    param(
+    param
+    (
         [string] $Name,
         [string] $path,
         [System.Management.Automation.Runspaces.PSSession] $Session
@@ -24,7 +25,7 @@ function Export-EventLog
     }
 
     invoke-command -ErrorAction:Continue @invokeCommandParams -script {
-        param($name, $path)
+        param ($name, $path)
         $ErrorActionPreference = 'stop'
         Set-StrictMode -Version latest
         Write-Debug "Name: $name"

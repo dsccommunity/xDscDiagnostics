@@ -49,15 +49,12 @@ Pester:
   Script:
     - tests/Unit
   ExcludeTag:
-    - helpQuality
-    - FunctionalQuality
-    - TestQuality
   Tag:
-  CodeCoverageThreshold: 85
+  CodeCoverageThreshold: 44 # Should be raised to 85 when unit tests coverage is better
 
 DscTest:
   ExcludeTag:
-    - "Common Tests - New Error-Level Script Analyzer Rules"
+    - 'Common Tests - Custom Script Analyzer Rules'
   Tag:
   ExcludeSourceFile:
     - output

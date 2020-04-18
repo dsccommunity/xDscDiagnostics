@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.2.0.0] - 2016-03-03
 
-- Add the Get-XDscConfigurationDetail cmdlet
+- Add the Get-xDscConfigurationDetail cmdlet
 
 ## [2.1.0.0] - 2016-02-02
 
