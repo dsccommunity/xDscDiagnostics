@@ -32,12 +32,15 @@
     request (PR). For those task that don't apply to you pull request (PR),
     leave those as is.
 -->
-- [ ] Added an entry under the Unreleased section of the change log in the README.md.
-      Entry should say what was changed, and how that affects users (if applicable).
+- [ ] Added an entry to the change log under the Unreleased section of the
+      file CHANGELOG.md. Entry should say what was changed and how that
+      affects users (if applicable), and reference the issue being resolved
+      (if applicable).
 - [ ] Documentation added/updated in README.md.
 - [ ] Comment-based help added/updated for all new/changed functions.
 - [ ] Localization strings added/updated in all localization files as appropriate.
-- [ ] Unit tests added/updated.
-- [ ] New/changed code adheres to
-      [DSC Resource Style Guidelines](https://github.com/PowerShell/DscResources/blob/master/StyleGuidelines.md)
-      and [Best Practices](https://github.com/PowerShell/DscResources/blob/master/BestPractices.md).
+- [ ] Examples appropriately added/updated.
+- [ ] Unit tests added/updated. See [DSC Community Testing Guidelines](https://dsccommunity.org/guidelines/testing-guidelines).
+- [ ] Integration tests added/updated (where possible). See
+  [DSC Community Testing Guidelines](https://dsccommunity.org/guidelines/testing-guidelines).
+- [ ] New/changed code adheres to [DSC Community Style Guidelines](https://dsccommunity.org/styleguidelines).
